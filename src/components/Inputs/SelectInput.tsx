@@ -4,7 +4,7 @@ import React from 'react'
 import { useFormikContext } from 'formik'
 
 // Components
-import FormError from '../FormError'
+import FormError from '../Form/FormError'
 
 //Props
 interface InputProps extends React.SelectHTMLAttributes<HTMLSelectElement> {

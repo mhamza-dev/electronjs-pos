@@ -18,3 +18,7 @@ body {
   color: #1f2937;
   /* Dark text by default */
 }
+
+::-webkit-input-placeholder {
+  color: #9ca3af;
+}
