@@ -1,22 +1,19 @@
 import React from 'react'
 import './App.css'
+import { PrimaryButton } from './components/Buttons'
+import { Form } from './components/Form'
+import { TextInput } from './components/Form/Inputs'
 
 const App: React.FC = () => {
   return (
     <>
-      <div className="login-container">
-        <h2>Login</h2>
-        <form>
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <input type="text" id="username" name="username" required />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input type="password" id="password" name="password" required />
-          </div>
-          <button type="submit">Login</button>
-        </form>
+      <div className="max-w-sm mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-semibold text-center mb-6">Login</h2>
+        <Form initialValues={{ username: '', password: '' }} onSubmit={values => console.log(values)} className="space-y-4">
+          <TextInput type="text" name="username" label="Username" />
+          <TextInput type="password" name="password" label="Password" />
+          <PrimaryButton>Login</PrimaryButton>
+        </Form>
       </div>
     </>
   )
