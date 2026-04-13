@@ -1,0 +1,23 @@
+import { supabase } from "../lib/supabase";
+
+export const employeeService = {
+  async getEmployees(businessId: string) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("current_business_id", businessId);
+    if (error) throw error;
+    return data;
+  },
+
+  async updateEmployee(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+};

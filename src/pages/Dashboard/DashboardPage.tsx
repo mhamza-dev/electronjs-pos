@@ -1,25 +1,41 @@
-import React, { useState } from 'react';
-
-// Components
-import POSLayout from '../../components/Layout/POSLayout';
-
-// Utils
-import { mockProducts, Product } from '../../data/mockProducts';
+import React, { useEffect, useState } from "react";
+import POSLayout from "../../components/Layout/POSLayout";
+import { Product } from "../../data/mockProducts";
+import { useAuth } from "../../contexts/AuthContext";
+import { productService, orderService } from "../../services/pos";
+import { useAPI } from "../../hooks/useAPI";
 
 interface CartItem extends Product {
   quantity: number;
 }
 
 const DashboardPage: React.FC = () => {
+  const { profile } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const {
+    data: products,
+
+    request: fetchProducts,
+  } = useAPI(productService.getProducts);
+
+  const { request: createOrder } = useAPI(orderService.createOrder);
+
+  useEffect(() => {
+    if (profile?.current_business_id) {
+      fetchProducts(profile.current_business_id);
+    }
+  }, [profile, fetchProducts]);
 
   const addToCart = (product: Product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
-        return prevCart.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        return prevCart.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
         );
       }
       return [...prevCart, { ...product, quantity: 1 }];
@@ -27,26 +43,105 @@ const DashboardPage: React.FC = () => {
   };
 
   const removeFromCart = (productId: number) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
+    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
   };
 
   const updateQuantity = (productId: number, delta: number) => {
-    setCart(prevCart => prevCart.map(item => {
-      if (item.id === productId) {
-        const newQuantity = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
-    }));
+    setCart((prevCart) =>
+      prevCart.map((item) => {
+        if (item.id === productId) {
+          const newQuantity = Math.max(1, item.quantity + delta);
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
+      }),
+    );
   };
 
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const subtotal = cart.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0,
+  );
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
 
-  const filteredProducts = mockProducts.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+
+    try {
+      const order = {
+        business_id: profile?.current_business_id,
+        employee_id: profile?.id,
+        subtotal,
+        tax,
+        total,
+        payment_method: "cash",
+      };
+
+      await createOrder(order, cart);
+
+      // Print Receipt
+      printReceipt();
+
+      alert(`Order Placed! Total: $${total.toFixed(2)}`);
+      setCart([]);
+    } catch (err) {
+      alert("Failed to process checkout");
+    }
+  };
+
+  const printReceipt = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const receiptContent = `
+      <html>
+        <head>
+          <title>Receipt</title>
+          <style>
+            body { font-family: 'Poppins', sans-serif; padding: 20px; width: 300px; }
+            .header { text-align: center; border-bottom: 1px dashed #ccc; padding-bottom: 10px; margin-bottom: 10px; }
+            .item { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+            .total { border-top: 1px dashed #ccc; margin-top: 10px; padding-top: 10px; font-weight: bold; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h3>POS PRO RECEIPT</h3>
+            <p>${new Date().toLocaleString()}</p>
+          </div>
+          ${cart
+            .map(
+              (item) => `
+            <div class="item">
+              <span>${item.name} x ${item.quantity}</span>
+              <span>$${(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          `,
+            )
+            .join("")}
+          <div class="total">
+            <div class="item"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>
+            <div class="item"><span>Tax</span><span>$${tax.toFixed(2)}</span></div>
+            <div class="item" style="font-size: 18px;"><span>Total</span><span>$${total.toFixed(2)}</span></div>
+          </div>
+          <div class="footer">
+            <p>Thank you for your business!</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(receiptContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  const filteredProducts = (products || []).filter(
+    (p: Product) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -55,7 +150,9 @@ const DashboardPage: React.FC = () => {
         {/* Product Grid */}
         <div className="flex-1 flex flex-col space-y-lg min-w-0 overflow-hidden">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">Available Products</h2>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Available Products
+            </h2>
             <div className="relative w-64">
               <input
                 type="text"
@@ -69,7 +166,7 @@ const DashboardPage: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto pr-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg pb-lg">
-              {filteredProducts.map((product) => (
+              {filteredProducts.map((product: Product) => (
                 <div
                   key={product.id}
                   onClick={() => addToCart(product)}
@@ -79,14 +176,30 @@ const DashboardPage: React.FC = () => {
                     {product.name.charAt(0)}
                   </div>
                   <div className="flex flex-col space-y-xs">
-                    <span className="text-lg font-bold text-gray-800 truncate">{product.name}</span>
-                    <span className="text-sm text-gray-400">{product.category}</span>
+                    <span className="text-lg font-bold text-gray-800 truncate">
+                      {product.name}
+                    </span>
+                    <span className="text-sm text-gray-400">
+                      {product.category}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between mt-xl">
-                    <span className="text-xl font-black text-primary">${product.price.toFixed(2)}</span>
+                    <span className="text-xl font-black text-primary">
+                      ${product.price.toFixed(2)}
+                    </span>
                     <button className="p-sm bg-gray-50 group-hover:bg-primary group-hover:text-white rounded-lg transition-colors text-gray-400">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -108,8 +221,18 @@ const DashboardPage: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-lg space-y-lg">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-gray-300 space-y-md">
-                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 118 0m-4 8a2 2 0 110-4 2 2 0 010 4zm-8 8a2 2 0 110-4 2 2 0 010 4zm-4-8a2 2 0 110-4 2 2 0 010 4zm0 0V7a4 4 0 018 0v4m-8 8a2 2 0 110-4 2 2 0 010 4z" />
+                <svg
+                  className="w-16 h-16"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 11V7a4 4 0 118 0m-4 8a2 2 0 110-4 2 2 0 010 4zm-8 8a2 2 0 110-4 2 2 0 010 4zm-4-8a2 2 0 110-4 2 2 0 010 4zm0 0V7a4 4 0 018 0v4m-8 8a2 2 0 110-4 2 2 0 010 4z"
+                  />
                 </svg>
                 <span className="font-medium text-lg">Cart is empty</span>
               </div>
@@ -120,7 +243,9 @@ const DashboardPage: React.FC = () => {
                     {item.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-gray-800 truncate">{item.name}</div>
+                    <div className="font-bold text-gray-800 truncate">
+                      {item.name}
+                    </div>
                     <div className="flex items-center space-x-sm mt-xs">
                       <button
                         onClick={() => updateQuantity(item.id, -1)}
@@ -128,18 +253,24 @@ const DashboardPage: React.FC = () => {
                       >
                         -
                       </button>
-                      <span className="text-sm font-bold text-gray-600 w-4 text-center">{item.quantity}</span>
+                      <span className="text-sm font-bold text-gray-600 w-4 text-center">
+                        {item.quantity}
+                      </span>
                       <button
                         onClick={() => updateQuantity(item.id, 1)}
                         className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                       >
                         +
                       </button>
-                      <span className="text-xs text-gray-400 ml-sm">x ${item.price.toFixed(2)}</span>
+                      <span className="text-xs text-gray-400 ml-sm">
+                        x ${item.price.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end space-y-xs">
-                    <div className="font-bold text-gray-800">${(item.price * item.quantity).toFixed(2)}</div>
+                    <div className="font-bold text-gray-800">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </div>
                     <button
                       onClick={() => removeFromCart(item.id)}
                       className="text-xs text-red-400 hover:text-red-600 transition-colors"
@@ -167,10 +298,7 @@ const DashboardPage: React.FC = () => {
             </div>
             <button
               disabled={cart.length === 0}
-              onClick={() => {
-                alert(`Order Placed! Total: $${total.toFixed(2)}`);
-                setCart([]);
-              }}
+              onClick={handleCheckout}
               className="w-full bg-primary text-white py-lg rounded-xl font-bold text-lg hover:bg-primary-700 transition-colors shadow-lg shadow-primary-100 mt-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               Checkout Now
