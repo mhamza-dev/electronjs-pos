@@ -1,5 +1,4 @@
-import SelectInput from './SelectInput'
-import TextInput from './TextInput'
+import SelectInput from "./SelectInput";
+import TextInput from "./TextInput";
 
-
-export { SelectInput, TextInput }
+export { SelectInput, TextInput };

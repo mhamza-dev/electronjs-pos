@@ -20,4 +20,21 @@ export const employeeService = {
     if (error) throw error;
     return data;
   },
+
+  async deleteEmployee(id: string) {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ current_business_id: null })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async removeAccess(userId: string, businessId: string) {
+    const { error } = await supabase
+      .from('business_access')
+      .delete()
+      .eq('user_id', userId)
+      .eq('business_id', businessId);
+    if (error) throw error;
+  }
 };

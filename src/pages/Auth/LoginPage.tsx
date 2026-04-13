@@ -32,7 +32,7 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 font-poppins">
       <div className="w-width-card-lg p-lg bg-white rounded-xl shadow-lg border border-gray-100">
         <div className="flex justify-center mb-xl">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shadow-primary-100">
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white">
             <svg
               className="w-10 h-10"
               fill="none"
