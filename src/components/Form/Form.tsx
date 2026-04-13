@@ -9,17 +9,17 @@ interface FormProps extends React.FormHTMLAttributes<HTMLFormElement> {
     children: React.ReactNode;
 }
 
-const Form: React.FC<FormProps> = ({ initialValues, onSubmit, children, ...props }) => {
+const Form: React.FC<FormProps> = ({ initialValues, onSubmit, children, className = '', ...props }) => {
     return (
         <Formik
             initialValues={initialValues}
             onSubmit={onSubmit}
             {...props}
         >
-            {() =>
-                <>
+            {({ handleSubmit }) =>
+                <form onSubmit={handleSubmit} className={className}>
                     {children}
-                </>
+                </form>
             }
         </Formik>
     )
