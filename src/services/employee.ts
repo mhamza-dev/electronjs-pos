@@ -4,8 +4,8 @@ export const employeeService = {
   async getEmployees(businessId: string) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
-      .eq("current_business_id", businessId);
+      .select("*, business_access(*)")
+      .eq("business_access.business_id", businessId);
     if (error) throw error;
     return data;
   },

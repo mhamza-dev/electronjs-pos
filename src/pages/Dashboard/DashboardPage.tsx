@@ -25,7 +25,7 @@ const DashboardPage: React.FC = () => {
     if (profile?.current_business_id) {
       fetchProducts(profile.current_business_id);
     }
-  }, [profile, fetchProducts]);
+  }, [profile]);
 
   const addToCart = (product: Product) => {
     setCart((prevCart) => {

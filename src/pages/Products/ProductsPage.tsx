@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
 import POSLayout from "../../components/Layout/POSLayout";
-import { Product } from "../../data/mockProducts";
 import { useAuth } from "../../contexts/AuthContext";
 import { productService } from "../../services/pos";
 import { useAPI } from "../../hooks/useAPI";
+import { Product } from "../../data/type";
+import { Button } from "../../components/Buttons";
 
 const ProductsPage: React.FC = () => {
   const { profile } = useAuth();
@@ -18,7 +19,7 @@ const ProductsPage: React.FC = () => {
     if (profile?.current_business_id) {
       fetchProducts(profile.current_business_id);
     }
-  }, [profile, fetchProducts]);
+  }, [profile]);
 
   return (
     <POSLayout>
@@ -27,9 +28,9 @@ const ProductsPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-800">
             Inventory Management
           </h2>
-          <button className="bg-primary text-white px-lg py-sm rounded-lg font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-100">
+          <Button variant="primary">
             Add New Product
-          </button>
+          </Button>
         </div>
 
         {loading ? (

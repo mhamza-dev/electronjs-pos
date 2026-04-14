@@ -18,7 +18,7 @@ const EmployeesPage: React.FC = () => {
     if (profile?.current_business_id) {
       fetchEmployees(profile.current_business_id);
     }
-  }, [profile, fetchEmployees]);
+  }, [profile]);
 
   return (
     <POSLayout>
@@ -77,11 +77,10 @@ const EmployeesPage: React.FC = () => {
                     <td className="px-lg py-md">{emp.email || "No email"}</td>
                     <td className="px-lg py-md">
                       <span
-                        className={`px-sm py-xs rounded-full text-xs font-bold ${
-                          emp.status === "Active"
-                            ? "bg-green-50 text-green-600"
-                            : "bg-yellow-50 text-yellow-600"
-                        }`}
+                        className={`px-sm py-xs rounded-full text-xs font-bold ${emp.status === "Active"
+                          ? "bg-green-50 text-green-600"
+                          : "bg-yellow-50 text-yellow-600"
+                          }`}
                       >
                         {emp.status || "Active"}
                       </span>
