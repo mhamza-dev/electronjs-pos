@@ -3,27 +3,28 @@ import React from "react";
 import { Formik } from "formik";
 
 interface FormProps extends React.FormHTMLAttributes<HTMLFormElement> {
-  initialValues: any;
-  onSubmit: (values: any) => void | Promise<any>;
-  children: React.ReactNode;
+    initialValues: any;
+    onSubmit: (values: any) => void | Promise<any>;
+    onChange?: (values: any) => void;
+    children: React.ReactNode;
 }
 
 const Form: React.FC<FormProps> = ({
-  initialValues,
-  onSubmit,
-  children,
-  className = "",
-  ...props
+    initialValues,
+    onSubmit,
+    onChange,
+    children,
+    ...props
 }) => {
-  return (
-    <Formik initialValues={initialValues} onSubmit={onSubmit} {...props}>
-      {({ handleSubmit }) => (
-        <form onSubmit={handleSubmit} className={className}>
-          {children}
-        </form>
-      )}
-    </Formik>
-  );
+    return (
+        <Formik initialValues={initialValues} onSubmit={onSubmit} onChange={onChange} {...props}>
+            {() =>
+                <>
+                    {children}
+                </>
+            }
+        </Formik>
+    );
 };
 
 export default Form;

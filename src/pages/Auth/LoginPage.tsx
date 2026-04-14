@@ -5,29 +5,32 @@ import { TextInput } from "../../components/Form/Inputs";
 import { Button } from "../../components/Buttons";
 import { supabase } from "../../lib/supabase";
 
+interface LoginProps {
+  email: string;
+  password: string;
+}
+
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (values: any) => {
-    setLoading(true);
-    setError(null);
+  const INITIAL_VALUES: LoginProps = { email: "", password: "" };
+
+  const handleLogin = async (values: LoginProps) => {
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      });
-
-      if (error) throw error;
+      setLoading(true);
+      await supabase.auth.signInWithPassword(values);
       navigate("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Failed to login");
+    } catch (error: any) {
+      console.log(error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 font-poppins">
       <div className="w-width-card-lg p-lg bg-white rounded-xl shadow-lg border border-gray-100">
@@ -62,7 +65,7 @@ const LoginPage: React.FC = () => {
         )}
 
         <Form
-          initialValues={{ email: "", password: "" }}
+          initialValues={INITIAL_VALUES}
           onSubmit={handleLogin}
           className="space-y-md"
         >
@@ -82,7 +85,7 @@ const LoginPage: React.FC = () => {
           />
           <div className="pt-sm">
             <Button type="submit" className="w-full" loading={loading}>
-              Login to POS
+              Login
             </Button>
           </div>
         </Form>

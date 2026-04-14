@@ -1,7 +1,6 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { businessService } from "../../services/business";
 
 interface POSLayoutProps {
   children: React.ReactNode;
@@ -14,14 +13,7 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
   const [businessName, setBusinessName] = React.useState<string>("POS PRO");
 
   React.useEffect(() => {
-    if (profile?.current_business_id) {
-      businessService
-        .getBusinessById(profile.current_business_id)
-        .then((data: any) => {
-          if (data) setBusinessName(data.name);
-        })
-        .catch(console.error);
-    }
+    setBusinessName(profile?.business_access?.find(ba => ba.business?.owner_id === profile?.id)?.business?.name || "POS PRO");
   }, [profile]);
 
   const handleLogout = async () => {
@@ -91,7 +83,7 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
   ];
 
   const filteredMenuItems = menuItems.filter(
-    (item) => !item.adminOnly || profile?.role === "admin",
+    (item) => !item.adminOnly || profile?.business_access?.[0]?.role === "admin",
   );
 
   return (
@@ -99,7 +91,7 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <aside className="w-width-sidebar flex-shrink-0 bg-white border-r border-gray-200 flex flex-col shadow-sm">
         <div className="h-height-header flex items-center px-lg border-b border-gray-200">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white mr-sm shadow-lg shadow-primary-100">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white mr-sm">
             <svg
               className="w-6 h-6"
               fill="none"
@@ -130,11 +122,10 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
             <Link
               key={item.path}
               to={item.path}
-              className={`p-sm rounded-xl font-bold flex items-center space-x-md transition-all ${
-                location.pathname === item.path
-                  ? "bg-primary text-white"
-                  : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-              }`}
+              className={`p-sm rounded-xl font-bold flex items-center space-x-md transition-all ${location.pathname === item.path
+                ? "bg-primary text-white"
+                : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+                }`}
             >
               <div
                 className={
@@ -184,7 +175,7 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
                 {profile?.full_name || "User"}
               </div>
               <div className="text-xs text-gray-400 capitalize">
-                {profile?.role || "Staff"}
+                {profile?.business_access?.[0]?.role || "Staff"}
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary font-bold shadow-sm">

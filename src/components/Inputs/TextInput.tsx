@@ -10,12 +10,13 @@ import FormError from "../Form/FormError";
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
   label?: string;
+  className?: string;
 }
 
-const TextInput: React.FC<InputProps> = ({ name, label, ...props }) => {
+const TextInput: React.FC<InputProps> = ({ name, label, className, ...props }) => {
   const { handleChange, setFieldTouched, errors, touched } = useFormikContext();
   return (
-    <div className="form-control">
+    <div className={`p-2 ${className}`}>
       {label && (
         <label htmlFor={name} className="block text-gray-700 font-medium mb-2">
           {label}

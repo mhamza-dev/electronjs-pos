@@ -2,13 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
 import { authService } from "../services/auth";
-
-interface Profile {
-  id: string;
-  current_business_id: string | null;
-  full_name: string;
-  role: "admin" | "employee";
-}
+import { Profile } from "../data/type";
 
 interface AuthContextType {
   session: Session | null;
@@ -31,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const data = await authService.getProfile(userId);
       setProfile(data);
     } catch (error) {

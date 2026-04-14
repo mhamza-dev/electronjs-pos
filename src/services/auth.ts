@@ -30,7 +30,7 @@ export const authService = {
   async getProfile(userId: string) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*, business_access(business_id, role)")
+      .select("*, business_access(role, business:business_id(*))")
       .eq("id", userId)
       .single();
     if (error) throw error;

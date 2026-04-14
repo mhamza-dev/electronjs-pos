@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import POSLayout from "../../components/Layout/POSLayout";
-import { Product } from "../../data/mockProducts";
+import { Product, CartItem } from "../../data/type";
 import { useAuth } from "../../contexts/AuthContext";
 import { productService, orderService } from "../../services/pos";
 import { useAPI } from "../../hooks/useAPI";
-
-interface CartItem extends Product {
-  quantity: number;
-}
+import { Form } from "../../components/Form";
+import { TextInput } from "../../components/Inputs";
+import Cart from "../../components/Cart";
 
 const DashboardPage: React.FC = () => {
   const { profile } = useAuth();
@@ -16,13 +15,13 @@ const DashboardPage: React.FC = () => {
 
   const {
     data: products,
-
     request: fetchProducts,
   } = useAPI(productService.getProducts);
 
   const { request: createOrder } = useAPI(orderService.createOrder);
 
   useEffect(() => {
+    console.log(profile);
     if (profile?.current_business_id) {
       fetchProducts(profile.current_business_id);
     }
@@ -42,11 +41,11 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeCartItem = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
   };
 
-  const updateQuantity = (productId: number, delta: number) => {
+  const updateQuantity = (productId: string, delta: number) => {
     setCart((prevCart) =>
       prevCart.map((item) => {
         if (item.id === productId) {
@@ -112,15 +111,15 @@ const DashboardPage: React.FC = () => {
             <p>${new Date().toLocaleString()}</p>
           </div>
           ${cart
-            .map(
-              (item) => `
+        .map(
+          (item) => `
             <div class="item">
               <span>${item.name} x ${item.quantity}</span>
               <span>$${(item.price * item.quantity).toFixed(2)}</span>
             </div>
           `,
-            )
-            .join("")}
+        )
+        .join("")}
           <div class="total">
             <div class="item"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>
             <div class="item"><span>Tax</span><span>$${tax.toFixed(2)}</span></div>
@@ -153,15 +152,18 @@ const DashboardPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-800">
               Available Products
             </h2>
-            <div className="relative w-64">
-              <input
+            <Form
+              initialValues={{ searchQuery: "" }}
+              onSubmit={setSearchQuery}
+              onChange={(values) => setSearchQuery(values.searchQuery)}
+            >
+              <TextInput
+                name="searchQuery"
                 type="text"
                 placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-lg pr-md py-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="w-64"
               />
-            </div>
+            </Form>
           </div>
 
           <div className="flex-1 overflow-y-auto pr-sm">
@@ -209,8 +211,10 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
+        <Cart items={cart} onUpdateQuantity={updateQuantity} onRemoveItem={removeCartItem} onCheckout={handleCheckout} />
+
         {/* Cart Sidebar */}
-        <div className="w-width-card bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col flex-shrink-0 overflow-hidden">
+        {/* <div className="w-width-card bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col flex-shrink-0 overflow-hidden">
           <div className="p-lg border-b border-gray-100 flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-800">Current Order</h3>
             <span className="bg-primary-50 text-primary text-xs px-sm py-xs rounded-full font-bold">
@@ -304,7 +308,7 @@ const DashboardPage: React.FC = () => {
               Checkout Now
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </POSLayout>
   );
