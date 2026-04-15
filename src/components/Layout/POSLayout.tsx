@@ -13,7 +13,8 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
   const [businessName, setBusinessName] = React.useState<string>("POS PRO");
 
   React.useEffect(() => {
-    setBusinessName(profile?.business_access?.find(ba => ba.business?.owner_id === profile?.id)?.business?.name || "POS PRO");
+    console.log("Profile ->", profile);
+    setBusinessName(profile?.business_users?.[0]?.business?.name || "POS PRO");
   }, [profile]);
 
   const handleLogout = async () => {
@@ -83,7 +84,8 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
   ];
 
   const filteredMenuItems = menuItems.filter(
-    (item) => !item.adminOnly || profile?.business_access?.[0]?.role === "admin",
+    (item) =>
+      !item.adminOnly || profile?.business_users?.[0]?.role_name === "admin",
   );
 
   return (
@@ -122,10 +124,11 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
             <Link
               key={item.path}
               to={item.path}
-              className={`p-sm rounded-xl font-bold flex items-center space-x-md transition-all ${location.pathname === item.path
-                ? "bg-primary text-white"
-                : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-                }`}
+              className={`p-sm rounded-xl font-bold flex items-center space-x-md transition-all ${
+                location.pathname === item.path
+                  ? "bg-primary text-white"
+                  : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+              }`}
             >
               <div
                 className={
@@ -175,7 +178,7 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
                 {profile?.full_name || "User"}
               </div>
               <div className="text-xs text-gray-400 capitalize">
-                {profile?.business_access?.[0]?.role || "Staff"}
+                {profile?.business_users?.[0]?.role_name || "Staff"}
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary font-bold shadow-sm">

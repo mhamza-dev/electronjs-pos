@@ -5,6 +5,14 @@ import { useAuth } from "../../contexts/AuthContext";
 import { employeeService } from "../../services/employee";
 import { useAPI } from "../../hooks/useAPI";
 
+interface Employee {
+  id: string;
+  full_name: string;
+  role: string;
+  email: string;
+  status: string;
+}
+
 const EmployeesPage: React.FC = () => {
   const { profile } = useAuth();
 
@@ -65,7 +73,7 @@ const EmployeesPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 text-gray-700">
-                {(employees || []).map((emp: any) => (
+                {(employees || []).map((emp: Employee) => (
                   <tr
                     key={emp.id}
                     className="hover:bg-gray-50 transition-colors"
@@ -77,10 +85,11 @@ const EmployeesPage: React.FC = () => {
                     <td className="px-lg py-md">{emp.email || "No email"}</td>
                     <td className="px-lg py-md">
                       <span
-                        className={`px-sm py-xs rounded-full text-xs font-bold ${emp.status === "Active"
-                          ? "bg-green-50 text-green-600"
-                          : "bg-yellow-50 text-yellow-600"
-                          }`}
+                        className={`px-sm py-xs rounded-full text-xs font-bold ${
+                          emp.status === "Active"
+                            ? "bg-green-50 text-green-600"
+                            : "bg-yellow-50 text-yellow-600"
+                        }`}
                       >
                         {emp.status || "Active"}
                       </span>

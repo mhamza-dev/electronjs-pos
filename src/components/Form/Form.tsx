@@ -1,30 +1,23 @@
 import React from "react";
 // 3rd Party Libraries
-import { Formik } from "formik";
+import { Formik, FormikConfig } from "formik";
 
-interface FormProps extends React.FormHTMLAttributes<HTMLFormElement> {
-    initialValues: any;
-    onSubmit: (values: any) => void | Promise<any>;
-    onChange?: (values: any) => void;
-    children: React.ReactNode;
+interface FormProps extends Omit<FormikConfig<any>, "onSubmit"> {
+  onSubmit: (values: any) => void | Promise<any>;
+  children: React.ReactNode;
+  className?: string;
 }
 
 const Form: React.FC<FormProps> = ({
-    initialValues,
-    onSubmit,
-    onChange,
-    children,
-    ...props
+  children,
+  className = "",
+  ...formikProps
 }) => {
-    return (
-        <Formik initialValues={initialValues} onSubmit={onSubmit} onChange={onChange} {...props}>
-            {() =>
-                <>
-                    {children}
-                </>
-            }
-        </Formik>
-    );
+  return (
+    <Formik {...formikProps} enableReinitialize>
+      {() => <>{children}</>}
+    </Formik>
+  );
 };
 
 export default Form;

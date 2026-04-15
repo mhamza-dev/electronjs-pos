@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import POSLayout from "../../components/Layout/POSLayout";
-import { Product, CartItem } from "../../data/type";
+import { Item, CartItem } from "../../data/type";
 import { useAuth } from "../../contexts/AuthContext";
 import { productService, orderService } from "../../services/pos";
 import { useAPI } from "../../hooks/useAPI";
@@ -13,10 +13,9 @@ const DashboardPage: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const {
-    data: products,
-    request: fetchProducts,
-  } = useAPI(productService.getProducts);
+  const { data: products, request: fetchProducts } = useAPI(
+    productService.getProducts,
+  );
 
   const { request: createOrder } = useAPI(orderService.createOrder);
 
@@ -27,7 +26,7 @@ const DashboardPage: React.FC = () => {
     }
   }, [profile]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Item) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
@@ -111,15 +110,15 @@ const DashboardPage: React.FC = () => {
             <p>${new Date().toLocaleString()}</p>
           </div>
           ${cart
-        .map(
-          (item) => `
+            .map(
+              (item) => `
             <div class="item">
               <span>${item.name} x ${item.quantity}</span>
               <span>$${(item.price * item.quantity).toFixed(2)}</span>
             </div>
           `,
-        )
-        .join("")}
+            )
+            .join("")}
           <div class="total">
             <div class="item"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>
             <div class="item"><span>Tax</span><span>$${tax.toFixed(2)}</span></div>
@@ -138,9 +137,9 @@ const DashboardPage: React.FC = () => {
   };
 
   const filteredProducts = (products || []).filter(
-    (p: Product) =>
+    (p: Item) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase()),
+      p.type?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -155,7 +154,7 @@ const DashboardPage: React.FC = () => {
             <Form
               initialValues={{ searchQuery: "" }}
               onSubmit={setSearchQuery}
-              onChange={(values) => setSearchQuery(values.searchQuery)}
+              validateOnChange={true}
             >
               <TextInput
                 name="searchQuery"
@@ -168,7 +167,7 @@ const DashboardPage: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto pr-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg pb-lg">
-              {filteredProducts.map((product: Product) => (
+              {filteredProducts.map((product: Item) => (
                 <div
                   key={product.id}
                   onClick={() => addToCart(product)}
@@ -182,7 +181,7 @@ const DashboardPage: React.FC = () => {
                       {product.name}
                     </span>
                     <span className="text-sm text-gray-400">
-                      {product.category}
+                      {product.type}
                     </span>
                   </div>
                   <div className="flex items-center justify-between mt-xl">
@@ -211,7 +210,12 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <Cart items={cart} onUpdateQuantity={updateQuantity} onRemoveItem={removeCartItem} onCheckout={handleCheckout} />
+        <Cart
+          items={cart}
+          onUpdateQuantity={updateQuantity}
+          onRemoveItem={removeCartItem}
+          onCheckout={handleCheckout}
+        />
 
         {/* Cart Sidebar */}
         {/* <div className="w-width-card bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col flex-shrink-0 overflow-hidden">

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Form } from "../../components/Form";
-import { TextInput } from "../../components/Form/Inputs";
+import { TextInput } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
 import { supabase } from "../../lib/supabase";
 
@@ -19,7 +19,6 @@ const LoginPage: React.FC = () => {
   const INITIAL_VALUES: LoginProps = { email: "", password: "" };
 
   const handleLogin = async (values: LoginProps) => {
-
     try {
       setLoading(true);
       await supabase.auth.signInWithPassword(values);
@@ -84,7 +83,12 @@ const LoginPage: React.FC = () => {
             required
           />
           <div className="pt-sm">
-            <Button type="submit" className="w-full" loading={loading}>
+            <Button
+              inForm={true}
+              type="submit"
+              className="w-full"
+              loading={loading}
+            >
               Login
             </Button>
           </div>

@@ -7,22 +7,20 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   variant?: ButtonVariant;
   loading?: boolean;
+  inForm?: boolean; // set to true when button is inside a Formik form
 }
 
 const Button: React.FC<ButtonProps> = ({
   children,
   variant = "primary",
   loading = false,
+  inForm = false,
   className = "",
   ...props
 }) => {
-  // Try to get Formik context safely
-  let formik: any = null;
-  try {
-    formik = useFormikContext();
-  } catch (e) {
-    // Not inside a Formik context
-  }
+  // Only access Formik context if the button is meant to be used inside a Formik form
+  const formikContext = inForm ? useFormikContext() : null;
+  const handleSubmit = formikContext?.handleSubmit;
 
   const baseStyles =
     "px-3 py-2 rounded-md font-bold transition-all duration-200 flex items-center justify-center space-x-sm disabled:opacity-50 disabled:cursor-not-allowed";
@@ -37,10 +35,12 @@ const Button: React.FC<ButtonProps> = ({
   };
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (props.type === "submit" && formik) {
+    // Only prevent default and call Formik's handleSubmit if inForm and type="submit"
+    if (props.type === "submit" && inForm && handleSubmit) {
       e.preventDefault();
-      formik.handleSubmit();
+      handleSubmit();
     }
+    // Always call the original onClick if provided
     if (props.onClick) {
       props.onClick(e);
     }

@@ -8,18 +8,25 @@ process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
+  ? path.join(process.env.APP_ROOT, "public")
+  : RENDERER_DIST;
 let win;
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     alwaysOnTop: true,
     webPreferences: {
-      preload: path.join(__dirname$1, "preload.mjs")
-    }
+      preload: path.join(__dirname$1, "preload.mjs"),
+    },
   });
   win.webContents.on("did-finish-load", () => {
-    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+    win == null
+      ? void 0
+      : win.webContents.send(
+          "main-process-message",
+          /* @__PURE__ */ new Date().toLocaleString(),
+        );
   });
   win.webContents.openDevTools({ mode: "right" });
   if (VITE_DEV_SERVER_URL) {
@@ -40,8 +47,4 @@ app.on("activate", () => {
   }
 });
 app.whenReady().then(createWindow);
-export {
-  MAIN_DIST,
-  RENDERER_DIST,
-  VITE_DEV_SERVER_URL
-};
+export { MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL };

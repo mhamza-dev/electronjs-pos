@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Form } from "../../components/Form";
-import { TextInput } from "../../components/Form/Inputs";
+import { TextInput } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
 import { businessService } from "../../services/business";
 import { authService } from "../../services/auth";
@@ -11,9 +11,16 @@ import { useAPI } from "../../hooks/useAPI";
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
-  const { loading: createBusinessLoading, error: createBusinessError, request: createBusiness } = useAPI(businessService.createBusiness);
-  const { loading: signupLoading, error: signupError, request: signup } = useAPI(authService.signup)
-
+  const {
+    loading: createBusinessLoading,
+    error: createBusinessError,
+    request: createBusiness,
+  } = useAPI(businessService.createBusiness);
+  const {
+    loading: signupLoading,
+    error: signupError,
+    request: signup,
+  } = useAPI(authService.signup);
 
   const handleSignup = async (values: any) => {
     const authData = await signup(
@@ -24,7 +31,9 @@ const SignupPage: React.FC = () => {
     if (!authData.user) throw new Error("Signup failed");
     await createBusiness(values.businessName, authData.user.id);
     await refreshProfile();
-    alert("Account created successfully! Please check your inbox and verify your email.");
+    alert(
+      "Account created successfully! Please check your inbox and verify your email.",
+    );
     navigate("/login");
   };
 
@@ -55,11 +64,12 @@ const SignupPage: React.FC = () => {
           Get started with your POS account
         </p>
 
-        {createBusinessError || signupError && (
-          <div className="mb-lg p-sm bg-red-50 text-red-500 rounded-xl text-sm font-bold text-center border border-red-100">
-            {signupError ? signupError : createBusinessError}
-          </div>
-        )}
+        {createBusinessError ||
+          (signupError && (
+            <div className="mb-lg p-sm bg-red-50 text-red-500 rounded-xl text-sm font-bold text-center border border-red-100">
+              {signupError ? signupError : createBusinessError}
+            </div>
+          ))}
 
         <Form
           initialValues={{
@@ -101,7 +111,12 @@ const SignupPage: React.FC = () => {
           />
 
           <div className="pt-sm">
-            <Button type="submit" className="w-full" loading={createBusinessLoading || signupLoading}>
+            <Button
+              inForm={true}
+              type="submit"
+              className="w-full"
+              loading={createBusinessLoading || signupLoading}
+            >
               Sign Up Now
             </Button>
           </div>

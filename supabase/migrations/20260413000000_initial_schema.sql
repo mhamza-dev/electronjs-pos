@@ -1,239 +1,325 @@
--- =============================================
--- Multi-Tenant Business + POS Schema (Supabase) - FIXED
--- Single file | Idempotent | RLS-safe
--- =============================================
+-- =========================================================
+-- EXTENSIONS
+-- =========================================================
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Custom Type (safe creation)
-DO $$
-BEGIN
-  CREATE TYPE user_role AS ENUM ('admin', 'employee');
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
-
--- 1. Business Types
-CREATE TABLE IF NOT EXISTS business_types (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  name text UNIQUE NOT NULL,
-  description text,
-  created_at timestamptz DEFAULT now()
+-- =========================================================
+-- BUSINESS TYPES
+-- =========================================================
+CREATE TABLE business_types (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT UNIQUE NOT NULL,
+    description TEXT
 );
 
--- 2. Businesses Table
-CREATE TABLE IF NOT EXISTS businesses (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  name text NOT NULL,
-  owner_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  business_type_id uuid REFERENCES business_types(id) ON DELETE SET NULL,
-  subscription_tier text DEFAULT 'free',
-  subscription_status text DEFAULT 'active',
-  trial_ends_at timestamp with time zone DEFAULT now() + interval '14 days',
-  created_at timestamp with time zone DEFAULT now()
+-- =========================================================
+-- BUSINESSES
+-- =========================================================
+CREATE TABLE businesses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID REFERENCES auth.users(id),
+    business_type_id UUID REFERENCES business_types(id),
+    name TEXT NOT NULL,
+    currency TEXT DEFAULT 'PKR',
+    timezone TEXT DEFAULT 'Asia/Karachi',
+    address TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 3. Profiles Table (FIXED: id = auth.users.id, removed redundant user_id)
-CREATE TABLE IF NOT EXISTS profiles (
-  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name text,
-  phone text,
-  email text,
-  current_business_id uuid REFERENCES businesses(id) ON DELETE SET NULL,
-  created_at timestamp with time zone DEFAULT now()
+-- =========================================================
+-- FEATURES
+-- =========================================================
+CREATE TABLE features (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT UNIQUE NOT NULL
 );
 
--- 4. Business Access (many-to-many with role)
-CREATE TABLE IF NOT EXISTS business_access (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  profile_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  business_id uuid REFERENCES businesses(id) ON DELETE CASCADE NOT NULL,
-  role user_role DEFAULT 'employee',
-  created_at timestamp with time zone DEFAULT now(),
-  UNIQUE(user_id, business_id)  -- Simplified: one access record per user/business
+CREATE TABLE business_type_features (
+    business_type_id UUID REFERENCES business_types(id) ON DELETE CASCADE,
+    feature_id UUID REFERENCES features(id) ON DELETE CASCADE,
+    PRIMARY KEY (business_type_id, feature_id)
 );
 
--- 5. Products
-CREATE TABLE IF NOT EXISTS products (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  business_id uuid REFERENCES businesses(id) ON DELETE CASCADE NOT NULL,
-  name text NOT NULL,
-  category text,
-  price decimal(10, 2) NOT NULL,
-  stock_quantity integer DEFAULT 0,
-  image text,
-  created_at timestamp with time zone DEFAULT now()
+CREATE TABLE business_features (
+    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
+    feature_id UUID REFERENCES features(id),
+    is_enabled BOOLEAN DEFAULT TRUE,
+    PRIMARY KEY (business_id, feature_id)
 );
 
--- 6. Orders
-CREATE TABLE IF NOT EXISTS orders (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  business_id uuid REFERENCES businesses(id) ON DELETE CASCADE NOT NULL,
-  employee_id uuid REFERENCES profiles(id) ON DELETE SET NULL,
-  subtotal decimal(10, 2) NOT NULL,
-  tax decimal(10, 2) NOT NULL,
-  total decimal(10, 2) NOT NULL,
-  payment_method text DEFAULT 'cash',
-  created_at timestamp with time zone DEFAULT now()
+-- =========================================================
+-- ROLES & PERMISSIONS
+-- =========================================================
+CREATE TABLE roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
+    name TEXT NOT NULL
 );
 
--- 7. Order Items
-CREATE TABLE IF NOT EXISTS order_items (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  order_id uuid REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
-  product_id uuid REFERENCES products(id) ON DELETE SET NULL,
-  quantity integer NOT NULL,
-  unit_price decimal(10, 2) NOT NULL,
-  total_price decimal(10, 2) NOT NULL,
-  created_at timestamp with time zone DEFAULT now()
+CREATE TABLE permissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT UNIQUE NOT NULL
 );
 
--- =============================================
--- HELPER FUNCTIONS (SECURITY DEFINER - bypass RLS safely)
--- =============================================
+CREATE TABLE role_permissions (
+    role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id UUID REFERENCES permissions(id) ON DELETE CASCADE,
+    PRIMARY KEY (role_id, permission_id)
+);
 
--- Check if user is admin for a specific business (no recursion)
-CREATE OR REPLACE FUNCTION public.is_admin_for_business(check_user_id uuid, check_business_id uuid)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER  -- ⚠️ Runs with elevated privileges, bypasses RLS
-SET search_path = public
-AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM business_access 
-    WHERE user_id = check_user_id 
-      AND business_id = check_business_id 
-      AND role = 'admin'
-  );
-END;
-$$;
+-- =========================================================
+-- BUSINESS USERS
+-- =========================================================
+CREATE TABLE business_users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
+    role_id UUID REFERENCES roles(id),
+    status TEXT DEFAULT 'active',
+    joined_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, business_id)
+);
 
--- Check if user has ANY access to a business (admin or employee)
-CREATE OR REPLACE FUNCTION public.has_business_access(check_user_id uuid, check_business_id uuid)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM business_access 
-    WHERE user_id = check_user_id 
-      AND business_id = check_business_id
-  );
-END;
-$$;
+-- =========================================================
+-- BRANCHES
+-- =========================================================
+CREATE TABLE branches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
+    name TEXT,
+    address TEXT,
+    phone TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
--- =============================================
--- Enable Row Level Security
--- =============================================
-ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE business_access ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+-- =========================================================
+-- EMPLOYEES
+-- =========================================================
+CREATE TABLE employees (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id),
+    business_id UUID REFERENCES businesses(id),
+    designation TEXT,
+    salary NUMERIC,
+    hired_at DATE DEFAULT CURRENT_DATE
+);
 
--- =============================================
--- RLS Policies (FIXED: No recursion)
--- =============================================
+CREATE TABLE employee_branches (
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    branch_id UUID REFERENCES branches(id) ON DELETE CASCADE,
+    PRIMARY KEY (employee_id, branch_id)
+);
 
--- Businesses: Owner or anyone with access can view
-CREATE POLICY "Users can view accessible businesses" ON businesses
-  FOR SELECT USING (
-    auth.uid() = owner_id 
-    OR public.has_business_access(auth.uid(), id)
-  );
+CREATE TABLE shifts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    employee_id UUID REFERENCES employees(id),
+    branch_id UUID REFERENCES branches(id),
+    start_time TIMESTAMP,
+    end_time TIMESTAMP
+);
 
--- Business Access: 
--- 1. Users can always see their own access records
--- 2. Admins of a business can see all access records for that business
-CREATE POLICY "Users can view own business access" ON business_access
-  FOR SELECT USING (
-    user_id = auth.uid()  -- Own records always visible
-    OR public.is_admin_for_business(auth.uid(), business_id)  -- Admins see all for their business
-  );
+-- =========================================================
+-- CUSTOMERS
+-- =========================================================
+CREATE TABLE customers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID REFERENCES businesses(id),
+    name TEXT,
+    phone TEXT,
+    email TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
--- Business Access: Admins can manage (INSERT/UPDATE/DELETE) access for their business
-CREATE POLICY "Admins can manage business access" ON business_access
-  FOR ALL USING (
-    public.is_admin_for_business(auth.uid(), business_id)
-  );
+-- =========================================================
+-- ITEMS
+-- =========================================================
+CREATE TABLE items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID REFERENCES businesses(id),
+    name TEXT NOT NULL,
+    type TEXT,
+    sku TEXT,
+    barcode TEXT,
+    image TEXT,
+    price NUMERIC,
+    cost NUMERIC,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
--- Profiles: Users can manage their own profile
-CREATE POLICY "Users manage own profile" ON profiles
-  FOR ALL USING (auth.uid() = id);
+CREATE TABLE item_variants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    item_id UUID REFERENCES items(id),
+    name TEXT,
+    sku TEXT,
+    price NUMERIC
+);
 
--- Profiles: Admins can manage employees in businesses they admin
-CREATE POLICY "Admins manage employees in their business" ON profiles
-  FOR ALL USING (
-    public.is_admin_for_business(auth.uid(), current_business_id)
-  );
+-- =========================================================
+-- INVENTORY
+-- =========================================================
+CREATE TABLE inventory (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    item_id UUID REFERENCES items(id),
+    branch_id UUID REFERENCES branches(id),
+    quantity NUMERIC DEFAULT 0,
+    low_stock_threshold NUMERIC DEFAULT 5
+);
 
--- Products: Access only via business_access
-CREATE POLICY "Products via business access" ON products
-  FOR ALL USING (
-    public.has_business_access(auth.uid(), business_id)
-  );
+CREATE TABLE inventory_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    item_id UUID,
+    branch_id UUID,
+    change NUMERIC,
+    type TEXT,
+    reference_id UUID,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
--- Orders: Access only via business_access
-CREATE POLICY "Orders via business access" ON orders
-  FOR ALL USING (
-    public.has_business_access(auth.uid(), business_id)
-  );
+CREATE TABLE product_batches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    item_id UUID,
+    branch_id UUID,
+    quantity NUMERIC,
+    expiry_date DATE,
+    cost NUMERIC
+);
 
--- Order Items: Access via linked order's business
-CREATE POLICY "Order items via business access" ON order_items
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM orders o
-      WHERE o.id = order_items.order_id
-        AND public.has_business_access(auth.uid(), o.business_id)
-    )
-  );
+-- =========================================================
+-- ORDERS
+-- =========================================================
+CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID,
+    branch_id UUID,
+    customer_id UUID,
+    created_by UUID,
+    order_type TEXT,
+    total_amount NUMERIC,
+    status TEXT DEFAULT 'completed',
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
--- =============================================
--- Trigger: Auto-create profile on signup (FIXED)
--- =============================================
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (
-    id,              -- Must match auth.users.id
-    full_name,
-    email
-  )
-  VALUES (
-    NEW.id, 
-    NEW.raw_user_meta_data->>'full_name',
-    NEW.email
-  )
-  ON CONFLICT (id) DO UPDATE 
-    SET full_name = EXCLUDED.full_name,
-        email = EXCLUDED.email,
-        created_at = EXCLUDED.created_at;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+CREATE TABLE order_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+    item_id UUID,
+    quantity NUMERIC,
+    price NUMERIC
+);
 
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+CREATE TABLE payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID REFERENCES orders(id),
+    method TEXT,
+    amount NUMERIC,
+    paid_at TIMESTAMP DEFAULT NOW()
+);
 
--- =============================================
--- Indexes for Performance
--- =============================================
-CREATE INDEX IF NOT EXISTS idx_business_access_user_business ON business_access(user_id, business_id);
-CREATE INDEX IF NOT EXISTS idx_business_access_role ON business_access(business_id, role);
-CREATE INDEX IF NOT EXISTS idx_products_business_id ON products(business_id);
-CREATE INDEX IF NOT EXISTS idx_orders_business_id ON orders(business_id);
-CREATE INDEX IF NOT EXISTS idx_orders_employee_id ON orders(employee_id);
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_businesses_owner_id ON businesses(owner_id);
-CREATE INDEX IF NOT EXISTS idx_businesses_type_id ON businesses(business_type_id);
+-- =========================================================
+-- RESTAURANT
+-- =========================================================
+CREATE TABLE tables (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    branch_id UUID REFERENCES branches(id),
+    table_number TEXT,
+    capacity INT,
+    status TEXT DEFAULT 'available'
+);
 
--- Comments
-COMMENT ON FUNCTION public.is_admin_for_business IS 'Check admin status without RLS recursion';
-COMMENT ON FUNCTION public.has_business_access IS 'Check any access without RLS recursion';
-COMMENT ON TABLE business_access IS 'User-business membership with roles (RLS-safe)';
+-- =========================================================
+-- APPOINTMENTS
+-- =========================================================
+CREATE TABLE services (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID REFERENCES businesses(id),
+    name TEXT,
+    price NUMERIC,
+    duration_minutes INT
+);
+
+CREATE TABLE appointments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID REFERENCES businesses(id),
+    branch_id UUID REFERENCES branches(id),
+    customer_id UUID REFERENCES customers(id),
+    service_id UUID REFERENCES items(id),
+    employee_id UUID,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    status TEXT
+);
+
+-- =========================================================
+-- SUPPLIERS / PURCHASES
+-- =========================================================
+CREATE TABLE suppliers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID REFERENCES businesses(id),
+    name TEXT,
+    contact TEXT
+);
+
+CREATE TABLE purchases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    supplier_id UUID REFERENCES suppliers(id),
+    business_id UUID REFERENCES businesses(id),
+    total_amount NUMERIC,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE purchase_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    purchase_id UUID REFERENCES purchases(id) ON DELETE CASCADE,
+    item_id UUID,
+    quantity NUMERIC,
+    cost NUMERIC
+);
+
+-- =========================================================
+-- FINANCE
+-- =========================================================
+CREATE TABLE accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID,
+    name TEXT,
+    type TEXT
+);
+
+CREATE TABLE transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_id UUID REFERENCES accounts(id),
+    amount NUMERIC,
+    type TEXT,
+    reference_id UUID,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE invoices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_id UUID,
+    customer_id UUID,
+    total NUMERIC,
+    status TEXT,
+    due_date DATE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- =========================================================
+-- LOGS
+-- =========================================================
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id),
+    action TEXT,
+    entity_type TEXT,
+    entity_id UUID,
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE user_settings (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  current_business_id UUID REFERENCES businesses(id),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
