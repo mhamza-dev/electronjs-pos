@@ -1,20 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import POSLayout from "../../components/Layout/POSLayout";
 import { Button } from "../../components/Buttons";
 import { useAuth } from "../../contexts/AuthContext";
-import { employeeService } from "../../services/employee";
+import { employeeService } from "../../services";
 import { useAPI } from "../../hooks/useAPI";
-
-interface Employee {
-  id: string;
-  full_name: string;
-  role: string;
-  email: string;
-  status: string;
-}
+import { Employee } from "../../data/type";
 
 const EmployeesPage: React.FC = () => {
   const { profile } = useAuth();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const {
     data: employees,
@@ -22,11 +16,49 @@ const EmployeesPage: React.FC = () => {
     request: fetchEmployees,
   } = useAPI(employeeService.getEmployees);
 
+  const { loading: deleteLoading, request: removeAccess } = useAPI(
+    employeeService.removeAccess,
+  );
+
   useEffect(() => {
     if (profile?.current_business_id) {
       fetchEmployees(profile.current_business_id);
     }
   }, [profile]);
+
+  const handleDelete = async (employee: Employee) => {
+    // Prevent admin from deleting themselves
+    if (employee.id === profile?.id) {
+      alert("You cannot delete your own account while logged in.");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Are you sure you want to remove ${employee.full_name || employee.email}?`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await removeAccess(employee.id, profile!.current_business_id!);
+      await fetchEmployees(profile!.current_business_id!);
+      setDeleteError(null);
+    } catch (err: any) {
+      setDeleteError(err.message || "Failed to remove employee.");
+      alert(err.message || "Failed to remove employee.");
+    }
+  };
+
+  const handleAddEmployee = () => {
+    // TODO: Open modal for adding employee (invite user or create new)
+    alert("Add employee modal will be implemented.");
+  };
+
+  const isAdmin = profile?.business_users?.some(
+    (bu) => bu.role?.role_name === "admin",
+  );
 
   return (
     <POSLayout>
@@ -37,7 +69,7 @@ const EmployeesPage: React.FC = () => {
           </h2>
           <div className="flex space-x-md">
             <Button variant="secondary">Import CSV</Button>
-            <Button variant="primary">
+            <Button variant="primary" onClick={handleAddEmployee}>
               <svg
                 className="w-5 h-5 mr-xs"
                 fill="none"
@@ -56,6 +88,12 @@ const EmployeesPage: React.FC = () => {
           </div>
         </div>
 
+        {deleteError && (
+          <div className="bg-red-50 text-red-600 p-md rounded-lg text-sm">
+            {deleteError}
+          </div>
+        )}
+
         <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden min-h-[200px] flex flex-col">
           {loading ? (
             <div className="flex-1 flex items-center justify-center py-xl">
@@ -73,45 +111,69 @@ const EmployeesPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 text-gray-700">
-                {(employees || []).map((emp: Employee) => (
-                  <tr
-                    key={emp.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-lg py-md font-bold">
-                      {emp.full_name || "Unnamed"}
-                    </td>
-                    <td className="px-lg py-md capitalize">{emp.role}</td>
-                    <td className="px-lg py-md">{emp.email || "No email"}</td>
-                    <td className="px-lg py-md">
-                      <span
-                        className={`px-sm py-xs rounded-full text-xs font-bold ${
-                          emp.status === "Active"
-                            ? "bg-green-50 text-green-600"
-                            : "bg-yellow-50 text-yellow-600"
-                        }`}
-                      >
-                        {emp.status || "Active"}
-                      </span>
-                    </td>
-                    <td className="px-lg py-md text-right">
-                      <div className="flex justify-end space-x-sm">
-                        <Button
-                          variant="inverted"
-                          className="px-sm py-xs text-xs"
+                {employees && employees.length > 0 ? (
+                  employees.map((emp: Employee) => (
+                    <tr
+                      key={emp.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-lg py-md font-bold">
+                        {emp.full_name || "Unnamed"}
+                      </td>
+                      <td className="px-lg py-md capitalize">
+                        {emp.role || "—"}
+                      </td>
+                      <td className="px-lg py-md">{emp.email || "No email"}</td>
+                      <td className="px-lg py-md">
+                        <span
+                          className={`px-sm py-xs rounded-full text-xs font-bold ${
+                            emp.status === "active"
+                              ? "bg-green-50 text-green-600"
+                              : "bg-yellow-50 text-yellow-600"
+                          }`}
                         >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="danger"
-                          className="px-sm py-xs text-xs"
-                        >
-                          Delete
-                        </Button>
-                      </div>
+                          {emp.status || "active"}
+                        </span>
+                      </td>
+                      <td className="px-lg py-md text-right">
+                        <div className="flex justify-end space-x-sm">
+                          {isAdmin && (
+                            <>
+                              <Button
+                                variant="inverted"
+                                className="px-sm py-xs text-xs"
+                                onClick={() =>
+                                  alert("Edit not implemented yet")
+                                }
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="danger"
+                                className="px-sm py-xs text-xs"
+                                onClick={() => handleDelete(emp)}
+                                loading={deleteLoading}
+                              >
+                                Delete
+                              </Button>
+                            </>
+                          )}
+                          {!isAdmin && (
+                            <span className="text-gray-400 text-xs">
+                              No actions
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-xl text-gray-400">
+                      No employees found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           )}

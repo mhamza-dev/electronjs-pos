@@ -1,49 +1,47 @@
 import React, { useEffect, useState } from "react";
 import POSLayout from "../../components/Layout/POSLayout";
 import { useAuth } from "../../contexts/AuthContext";
-import { itemsService } from "../../services/items";
+import { catalogService } from "../../services";
 import { useAPI } from "../../hooks/useAPI";
-import { Item } from "../../data/type";
+import { CatalogProduct, CatalogProductInsert } from "../../data/type";
 import { Button } from "../../components/Buttons";
 import FormModal from "./FormModal";
 
 const ProductsPage: React.FC = () => {
   const { profile } = useAuth();
   const [showModal, setShowModal] = useState(false);
-  const defaultItem: Item = {
-    id: "",
-    name: "",
-    sku: "",
-    price: 0,
-    cost: 0,
-    type: "",
-    is_active: true,
-    business_id: profile?.current_business_id ?? "",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-  const [item, setItem] = useState<Item>(defaultItem);
+  const [editingProduct, setEditingProduct] = useState<CatalogProduct | null>(
+    null,
+  );
 
   const {
     data: products,
     loading,
     request: fetchProducts,
-  } = useAPI(itemsService.getItems);
+  } = useAPI(catalogService.getProducts);
+
+  const { loading: _deleteLoading, request: deleteProduct } = useAPI(
+    catalogService.deleteProduct,
+  );
+
+  const { loading: _toggleLoading, request: updateProduct } = useAPI(
+    catalogService.updateProduct,
+  );
 
   useEffect(() => {
     if (profile?.current_business_id) {
-      fetchProducts(profile.current_business_id);
+      fetchProducts(profile.current_business_id, { isActive: undefined });
     }
   }, [profile]);
 
-  const handleOpenModal = (item?: Item) => {
-    item && setItem(item);
+  const handleOpenModal = (product?: CatalogProduct) => {
+    setEditingProduct(product || null);
     setShowModal(true);
   };
 
-  const handleCloseModel = () => {
+  const handleCloseModal = () => {
     setShowModal(false);
-    setItem(defaultItem);
+    setEditingProduct(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -54,23 +52,56 @@ const ProductsPage: React.FC = () => {
     )
       return;
     try {
-      await itemsService.deleteItem(id);
+      await deleteProduct(id);
       if (profile?.current_business_id) {
         await fetchProducts(profile.current_business_id);
       }
     } catch (err: any) {
-      alert(err.message || "Delete failed. Only admins can delete items.");
+      alert(err.message || "Delete failed.");
     }
   };
 
-  const handleToggleStatus = async (item: Item) => {
+  const handleToggleStatus = async (product: CatalogProduct) => {
     try {
-      await itemsService.toggleItemStatus(item.id, !item.is_active);
+      await updateProduct(product.id, { is_active: !product.is_active });
       if (profile?.current_business_id) {
         await fetchProducts(profile.current_business_id);
       }
     } catch (err: any) {
       alert(err.message || "Status update failed.");
+    }
+  };
+
+  const handleSubmit = async (values: CatalogProductInsert) => {
+    try {
+      const productData = {
+        product_name: values.product_name,
+        sku: values.sku ?? null,
+        barcode: values.barcode ?? null,
+        description: values.description ?? null,
+        uom: values.uom ?? "ea",
+        default_price: values.default_price ?? null,
+        cost_price: values.cost_price ?? null,
+        is_active: values.is_active ?? true,
+        image_url: values.image_url ?? null,
+      };
+
+      if (editingProduct) {
+        await catalogService.updateProduct(editingProduct.id, productData);
+      } else {
+        await catalogService.createProduct(
+          profile!.current_business_id!,
+          productData,
+          values.category_ids,
+        );
+      }
+      if (profile?.current_business_id) {
+        await fetchProducts(profile.current_business_id);
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving product:", error);
+      alert("Failed to save product.");
     }
   };
 
@@ -92,32 +123,54 @@ const ProductsPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg pb-lg">
-            {(products || []).map((product: Item) => (
+            {(products || []).map((product: CatalogProduct) => (
               <div
                 key={product.id}
-                className={`bg-white border rounded-xl shadow-sm p-lg hover:shadow-md transition-shadow cursor-pointer group flex flex-col justify-between ${
+                className={`bg-white border rounded-xl shadow-sm p-lg hover:shadow-md transition-shadow group flex flex-col justify-between ${
                   !product.is_active
                     ? "opacity-60 border-gray-200"
                     : "border-gray-100"
                 }`}
               >
                 <div>
-                  <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-gray-300 text-4xl font-bold mb-lg group-hover:bg-primary-50 group-hover:text-primary transition-colors">
-                    {product.name.charAt(0)}
+                  <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden mb-lg">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.product_name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <span className="text-4xl font-bold text-gray-300">
+                        {product.product_name.charAt(0)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-col space-y-xs">
                     <span className="text-lg font-bold text-gray-800 truncate">
-                      {product.name}
+                      {product.product_name}
                     </span>
                     <span className="text-sm text-gray-400">
-                      {product.type || "Unknown"} • SKU: {product.sku}
+                      SKU: {product.sku || "—"} • {product.uom || "ea"}
                     </span>
+                    {product.description && (
+                      <p className="text-xs text-gray-500 line-clamp-2">
+                        {product.description}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-xl">
-                  <span className="text-xl font-black text-primary">
-                    ${product.price.toFixed(2)}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-xl font-black text-primary">
+                      ${(product.default_price || 0).toFixed(2)}
+                    </span>
+                    {product.cost_price && (
+                      <span className="text-xs text-gray-400">
+                        Cost: ${product.cost_price.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex space-x-sm">
                     <button
                       onClick={() => handleToggleStatus(product)}
@@ -197,13 +250,15 @@ const ProductsPage: React.FC = () => {
           </div>
         )}
       </div>
-      showModal &&{" "}
-      <FormModal
-        isVisible={showModal}
-        profile={profile}
-        onClose={handleCloseModel}
-        item={item}
-      />
+      {showModal && (
+        <FormModal
+          isVisible={showModal}
+          profile={profile}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          item={editingProduct}
+        />
+      )}
     </POSLayout>
   );
 };

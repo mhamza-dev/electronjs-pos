@@ -1,10 +1,10 @@
 import React from "react";
-import { CartItem } from "../data/type";
+import { CartItem } from "../data/type"; // Ensure CartItem extends CatalogProduct with quantity
 import Checkout from "./Checkout";
 
 interface CartProps {
   items: CartItem[];
-  onUpdateQuantity: (id: string, quantity: number) => void;
+  onUpdateQuantity: (id: string, newQuantity: number) => void; // absolute quantity
   onRemoveItem: (id: string) => void;
   onCheckout: () => void;
 }
@@ -16,7 +16,7 @@ const Cart: React.FC<CartProps> = ({
   onCheckout,
 }) => {
   const total = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + (item.default_price || 0) * item.quantity,
     0,
   );
 
@@ -30,18 +30,21 @@ const Cart: React.FC<CartProps> = ({
           <ul className="divide-y divide-gray-200">
             {items.map((item) => (
               <li key={item.id} className="flex items-center py-4">
-                {item.image && (
+                {/* If you add an image field to catalog_products later */}
+                {item.image_url && (
                   <img
-                    src={item.image}
-                    alt={item.name}
+                    src={item.image_url}
+                    alt={item.product_name}
                     className="w-20 h-20 object-cover rounded-md mr-4"
                   />
                 )}
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-800">
-                    {item.name}
+                    {item.product_name}
                   </h3>
-                  <p className="text-gray-600">${item.price.toFixed(2)}</p>
+                  <p className="text-gray-600">
+                    ${(item.default_price || 0).toFixed(2)}
+                  </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -62,7 +65,7 @@ const Cart: React.FC<CartProps> = ({
                   </button>
                 </div>
                 <p className="ml-6 text-gray-800 font-semibold">
-                  ${(item.price * item.quantity).toFixed(2)}
+                  ${((item.default_price || 0) * item.quantity).toFixed(2)}
                 </p>
                 <button
                   onClick={() => onRemoveItem(item.id)}

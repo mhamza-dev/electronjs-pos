@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import POSLayout from "../../components/Layout/POSLayout";
-import { Item, CartItem } from "../../data/type";
+import { CatalogProduct, CartItem } from "../../data/type";
 import { useAuth } from "../../contexts/AuthContext";
-import { productService, orderService } from "../../services/pos";
+import { catalogService, posService } from "../../services";
 import { useAPI } from "../../hooks/useAPI";
 import { Form } from "../../components/Form";
 import { TextInput } from "../../components/Inputs";
@@ -13,20 +13,21 @@ const DashboardPage: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Fetch products from catalog
   const { data: products, request: fetchProducts } = useAPI(
-    productService.getProducts,
+    catalogService.getProducts,
   );
 
-  const { request: createOrder } = useAPI(orderService.createOrder);
+  // Create sales order
+  const { request: createOrder } = useAPI(posService.createOrder);
 
   useEffect(() => {
-    console.log(profile);
     if (profile?.current_business_id) {
-      fetchProducts(profile.current_business_id);
+      fetchProducts(profile.current_business_id, { isActive: true });
     }
   }, [profile]);
 
-  const addToCart = (product: Item) => {
+  const addToCart = (product: CatalogProduct) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
@@ -57,33 +58,36 @@ const DashboardPage: React.FC = () => {
   };
 
   const subtotal = cart.reduce(
-    (acc, item) => acc + item.price * item.quantity,
+    (acc, item) => acc + (item.default_price || 0) * item.quantity,
     0,
   );
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
 
   const handleCheckout = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || !profile?.current_business_id) return;
 
     try {
-      const order = {
-        business_id: profile?.current_business_id,
-        employee_id: profile?.id,
-        subtotal,
-        tax,
-        total,
-        payment_method: "cash",
-      };
+      // Prepare items for order
+      const orderItems = cart.map((item) => ({
+        product_id: item.id,
+        quantity: item.quantity,
+        unit_price: item.default_price || 0,
+      }));
 
-      await createOrder(order, cart);
+      // Create the order (cashier_employee_id can be null for now)
+      await createOrder(profile.current_business_id, {
+        items: orderItems,
+        payment_status: "paid",
+      });
 
-      // Print Receipt
+      // Print receipt
       printReceipt();
 
       alert(`Order Placed! Total: $${total.toFixed(2)}`);
       setCart([]);
     } catch (err) {
+      console.error(err);
       alert("Failed to process checkout");
     }
   };
@@ -113,8 +117,8 @@ const DashboardPage: React.FC = () => {
             .map(
               (item) => `
             <div class="item">
-              <span>${item.name} x ${item.quantity}</span>
-              <span>$${(item.price * item.quantity).toFixed(2)}</span>
+              <span>${item.product_name} x ${item.quantity}</span>
+              <span>$${((item.default_price || 0) * item.quantity).toFixed(2)}</span>
             </div>
           `,
             )
@@ -136,10 +140,11 @@ const DashboardPage: React.FC = () => {
     printWindow.print();
   };
 
+  // Filter products based on search
   const filteredProducts = (products || []).filter(
-    (p: Item) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.type?.toLowerCase().includes(searchQuery.toLowerCase()),
+    (p: CatalogProduct) =>
+      p.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.description?.toLowerCase() || "").includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -153,7 +158,7 @@ const DashboardPage: React.FC = () => {
             </h2>
             <Form
               initialValues={{ searchQuery: "" }}
-              onSubmit={setSearchQuery}
+              onSubmit={(values) => setSearchQuery(values.searchQuery)}
               validateOnChange={true}
             >
               <TextInput
@@ -167,26 +172,26 @@ const DashboardPage: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto pr-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg pb-lg">
-              {filteredProducts.map((product: Item) => (
+              {filteredProducts.map((product: CatalogProduct) => (
                 <div
                   key={product.id}
                   onClick={() => addToCart(product)}
                   className="bg-white border border-gray-100 rounded-xl shadow-sm p-lg hover:shadow-md transition-shadow cursor-pointer group"
                 >
                   <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-gray-300 text-4xl font-bold mb-lg group-hover:bg-primary-50 group-hover:text-primary transition-colors">
-                    {product.name.charAt(0)}
+                    {product.product_name.charAt(0)}
                   </div>
                   <div className="flex flex-col space-y-xs">
                     <span className="text-lg font-bold text-gray-800 truncate">
-                      {product.name}
+                      {product.product_name}
                     </span>
                     <span className="text-sm text-gray-400">
-                      {product.type}
+                      {product.sku || "No SKU"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between mt-xl">
                     <span className="text-xl font-black text-primary">
-                      ${product.price.toFixed(2)}
+                      ${(product.default_price || 0).toFixed(2)}
                     </span>
                     <button className="p-sm bg-gray-50 group-hover:bg-primary group-hover:text-white rounded-lg transition-colors text-gray-400">
                       <svg
@@ -216,103 +221,6 @@ const DashboardPage: React.FC = () => {
           onRemoveItem={removeCartItem}
           onCheckout={handleCheckout}
         />
-
-        {/* Cart Sidebar */}
-        {/* <div className="w-width-card bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col flex-shrink-0 overflow-hidden">
-          <div className="p-lg border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-800">Current Order</h3>
-            <span className="bg-primary-50 text-primary text-xs px-sm py-xs rounded-full font-bold">
-              {cart.reduce((acc, item) => acc + item.quantity, 0)} items
-            </span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-lg space-y-lg">
-            {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-300 space-y-md">
-                <svg
-                  className="w-16 h-16"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 11V7a4 4 0 118 0m-4 8a2 2 0 110-4 2 2 0 010 4zm-8 8a2 2 0 110-4 2 2 0 010 4zm-4-8a2 2 0 110-4 2 2 0 010 4zm0 0V7a4 4 0 018 0v4m-8 8a2 2 0 110-4 2 2 0 010 4z"
-                  />
-                </svg>
-                <span className="font-medium text-lg">Cart is empty</span>
-              </div>
-            ) : (
-              cart.map((item) => (
-                <div key={item.id} className="flex items-center space-x-md">
-                  <div className="w-16 h-16 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 font-bold flex-shrink-0">
-                    {item.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-gray-800 truncate">
-                      {item.name}
-                    </div>
-                    <div className="flex items-center space-x-sm mt-xs">
-                      <button
-                        onClick={() => updateQuantity(item.id, -1)}
-                        className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                      >
-                        -
-                      </button>
-                      <span className="text-sm font-bold text-gray-600 w-4 text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1)}
-                        className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                      >
-                        +
-                      </button>
-                      <span className="text-xs text-gray-400 ml-sm">
-                        x ${item.price.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end space-y-xs">
-                    <div className="font-bold text-gray-800">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </div>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="p-lg border-t border-gray-100 space-y-md">
-            <div className="flex justify-between text-gray-500">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-gray-500">
-              <span>Tax (10%)</span>
-              <span>${tax.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-2xl font-black text-gray-900 pt-sm">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
-            </div>
-            <button
-              disabled={cart.length === 0}
-              onClick={handleCheckout}
-              className="w-full bg-primary text-white py-lg rounded-xl font-bold text-lg hover:bg-primary-700 transition-colors shadow-lg shadow-primary-100 mt-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              Checkout Now
-            </button>
-          </div>
-        </div> */}
       </div>
     </POSLayout>
   );

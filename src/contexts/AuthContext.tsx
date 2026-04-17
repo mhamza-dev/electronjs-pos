@@ -25,11 +25,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchProfile = async (user: User) => {
     try {
-      console.log("Fetching profile for user:", user);
       const data = await authService.getProfile(user);
       setProfile(data);
     } catch (error) {
-      console.error("Error fetching profile:", error);
     } finally {
       setLoading(false);
     }

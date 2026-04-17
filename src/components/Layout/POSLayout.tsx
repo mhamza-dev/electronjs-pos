@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { businessService } from "../../services/business";
 
 interface POSLayoutProps {
   children: React.ReactNode;
@@ -9,17 +10,21 @@ interface POSLayoutProps {
 const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { profile, session, signOut, refreshProfile } = useAuth();
   const [businessName, setBusinessName] = React.useState<string>("POS PRO");
 
   React.useEffect(() => {
-    console.log("Profile ->", profile);
     setBusinessName(profile?.business_users?.[0]?.business?.name || "POS PRO");
+    // businessService.getMyBusinesses();
   }, [profile]);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
+  };
+
+  const handleChangeBusiness = async (businessId: string) => {
+    // await refreshProfile(session?.user, businessId);
   };
 
   const menuItems = [

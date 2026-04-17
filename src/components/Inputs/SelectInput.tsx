@@ -10,7 +10,7 @@ import FormError from "../Form/FormError";
 interface InputProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   name: string;
   options: { value: string; label: string }[];
-  className: string;
+  className?: string;
   label?: string;
 }
 

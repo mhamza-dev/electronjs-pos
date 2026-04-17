@@ -3,39 +3,72 @@ import { useNavigate, Link } from "react-router-dom";
 import { Form } from "../../components/Form";
 import { TextInput } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
-import { businessService } from "../../services/business";
-import { authService } from "../../services/auth";
+import { businessService, rbacService, authService } from "../../services";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAPI } from "../../hooks/useAPI";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
-  const {
-    loading: createBusinessLoading,
-    error: createBusinessError,
-    request: createBusiness,
-  } = useAPI(businessService.createBusiness);
+
   const {
     loading: signupLoading,
     error: signupError,
     request: signup,
   } = useAPI(authService.signup);
 
+  const {
+    loading: createBusinessLoading,
+    error: createBusinessError,
+    request: createBusiness,
+  } = useAPI(businessService.createBusiness);
+
   const handleSignup = async (values: any) => {
+    // 1. Create auth user
     const authData = await signup(
       values.email,
       values.password,
       values.fullName,
     );
     if (!authData.user) throw new Error("Signup failed");
-    await createBusiness(values.businessName, authData.user.id);
+
+    const userId = authData.user.id;
+
+    // 2. Create the business (owner = current user)
+    const newBusiness = await createBusiness({
+      owner_user_id: userId,
+      business_name: values.businessName,
+      legal_name: values.businessName, // or separate field if desired
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      currency_code: "USD",
+    });
+
+    // 3. Assign the 'admin' role to the owner
+    // First, find the admin role for the new business
+    const roles = await rbacService.getRoles(newBusiness.id);
+    const adminRole = roles.find((r) => r.role_name === "admin");
+    if (adminRole) {
+      await rbacService.assignRoleToUser(
+        newBusiness.id,
+        userId,
+        adminRole.id,
+        userId, // assigned by self
+      );
+    }
+
+    // 4. Set current business in user_settings
+    await authService.switchBusiness(userId, newBusiness.id);
+
+    // 5. Refresh profile to pick up the new business context
     await refreshProfile();
+
     alert(
       "Account created successfully! Please check your inbox and verify your email.",
     );
     navigate("/login");
   };
+
+  const errorMessage = signupError || createBusinessError;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 font-poppins">
@@ -64,12 +97,11 @@ const SignupPage: React.FC = () => {
           Get started with your POS account
         </p>
 
-        {createBusinessError ||
-          (signupError && (
-            <div className="mb-lg p-sm bg-red-50 text-red-500 rounded-xl text-sm font-bold text-center border border-red-100">
-              {signupError ? signupError : createBusinessError}
-            </div>
-          ))}
+        {errorMessage && (
+          <div className="mb-lg p-sm bg-red-50 text-red-500 rounded-xl text-sm font-bold text-center border border-red-100">
+            {errorMessage}
+          </div>
+        )}
 
         <Form
           initialValues={{
@@ -77,7 +109,6 @@ const SignupPage: React.FC = () => {
             email: "",
             password: "",
             businessName: "",
-            businessId: "",
           }}
           onSubmit={handleSignup}
           className="space-y-md"

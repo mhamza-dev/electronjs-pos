@@ -1,433 +1,370 @@
 // =========================================================
-// ENUMS (based on schema constraints)
+// TYPES for Multi-Tenant Business Schema (Supabase)
 // =========================================================
 
-export type UserRole = "admin" | "manager" | "cashier"; // from roles.name
-export type PaymentMethod = "cash" | "card" | "mobile";
-export type OrderStatus = "pending" | "completed" | "cancelled";
-export type AppointmentStatus = "scheduled" | "completed" | "cancelled";
-export type BusinessUserStatus = "active" | "inactive";
+// ---------------------------------------------------------
+// Base Types (Timestamps, JSON)
+// ---------------------------------------------------------
+export type Timestamp = string; // ISO 8601
+export type Json = Record<string, any>;
 
-// =========================================================
-// BASE TYPES
-// =========================================================
+// ---------------------------------------------------------
+// Enums / Literal Unions
+// ---------------------------------------------------------
+export type BusinessStatus = "active" | "inactive" | "suspended";
+export type EmploymentStatus = "active" | "terminated" | "on_leave";
+export type OrderStatus = "draft" | "completed" | "cancelled" | "refunded";
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type PurchaseOrderStatus =
+  | "draft"
+  | "ordered"
+  | "received"
+  | "cancelled";
+export type SupplierStatus = "active" | "inactive";
 
-export type UUID = string;
-
-// =========================================================
-// BUSINESS TYPES
-// =========================================================
-
-export interface BusinessType {
-  id: UUID;
-  name: string; // e.g., 'Restaurant', 'Retail', 'Cafe', 'Salon'
-  description?: string;
+export interface AuthPermission {
+  id: string;
+  permission_key: string;
+  module_name: string | null;
+  description: string | null;
+  created_at: Timestamp;
 }
-
-// =========================================================
-// FEATURES & BUSINESS FEATURES
-// =========================================================
-
-export interface Feature {
-  id: UUID;
-  name: string; // 'inventory', 'pos', 'appointments', 'reports', 'multi_branch'
-}
-
-export interface BusinessTypeFeature {
-  business_type_id: UUID;
-  feature_id: UUID;
-}
-
-export interface BusinessFeature {
-  business_id: UUID;
-  feature_id: UUID;
-  is_enabled: boolean;
-}
-
-// =========================================================
-// BUSINESS
-// =========================================================
-
-export interface Business {
-  id: UUID;
-  owner_id: UUID; // references auth.users
-  business_type_id: UUID;
-  name: string;
-  currency: string; // default 'PKR'
-  timezone: string; // default 'Asia/Karachi'
-  address?: string;
-  created_at: string; // timestamp
-}
-
-// =========================================================
-// ROLES & PERMISSIONS
-// =========================================================
-
-export interface Role {
-  id: UUID;
-  business_id: UUID;
-  name: string; // 'admin', 'manager', 'cashier'
-}
-
-export interface Permission {
-  id: UUID;
-  name: string; // 'create', 'read', 'update', 'delete'
-}
-
-export interface RolePermission {
-  role_id: UUID;
-  permission_id: UUID;
-}
-
-// =========================================================
-// BUSINESS USERS (user membership)
-// =========================================================
-
-export interface BusinessUser {
-  id: UUID;
-  user_id: UUID; // references auth.users
-  business_id: UUID;
-  role_id: UUID;
-  status: BusinessUserStatus; // 'active' etc.
-  joined_at: string;
-  // Joined fields (for convenience)
-  role?: Role;
-  business?: Business;
-}
-
-// Flattened version for profile return
-export interface BusinessUserWithRole {
-  id: UUID;
-  status: BusinessUserStatus;
-  joined_at: string;
-  business: Business | null;
-  role_name: string | undefined; // e.g., 'admin'
-}
-
-// =========================================================
-// USER PROFILE (return type of getProfile)
-// =========================================================
-
-export interface UserProfile {
-  id: UUID;
-  email: string | undefined;
-  full_name: string | null;
-  business_users: BusinessUserWithRole[];
-  current_business_id: UUID | null; // from user_settings (optional)
-}
-
-// =========================================================
-// USER SETTINGS (for storing current_business_id)
-// =========================================================
 
 export interface UserSettings {
-  user_id: UUID;
-  current_business_id: UUID | null;
-  updated_at: string;
+  user_id: string;
+  current_business_id: string | null;
+  updated_at: Timestamp;
 }
 
-// =========================================================
-// BRANCHES
-// =========================================================
-
-export interface Branch {
-  id: UUID;
-  business_id: UUID;
-  name: string;
-  address?: string;
-  phone?: string;
-  created_at: string;
+export interface OrgBusiness {
+  id: string;
+  owner_user_id: string | null;
+  business_name: string;
+  legal_name: string | null;
+  slug: string | null;
+  timezone: string;
+  currency_code: string;
+  status: BusinessStatus;
+  created_at: Timestamp;
+  updated_at: Timestamp;
 }
 
-// =========================================================
-// EMPLOYEES
-// =========================================================
+export interface AuthRole {
+  id: string;
+  business_id: string;
+  role_name: string;
+  description: string | null;
+  is_system_role: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface AuthUserBusinessRole {
+  id: string;
+  business_id: string;
+  user_id: string;
+  role_id: string;
+  assigned_by_user_id: string | null;
+  assigned_at: Timestamp;
+  // Expanded relations (optional)
+  role?: AuthRole;
+  business?: OrgBusiness;
+}
+
+export interface AuthRolePermission {
+  id: string;
+  business_id: string;
+  role_id: string;
+  permission_id: string;
+  granted_at: Timestamp;
+  permission?: AuthPermission;
+  role?: AuthRole;
+}
+
+export interface AuthUserSession {
+  id: string;
+  user_id: string;
+  active_business_id: string | null;
+  session_token_hash: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: Timestamp;
+  last_seen_at: Timestamp;
+  expires_at: Timestamp | null;
+  revoked_at: Timestamp | null;
+}
+
+export interface OrgDepartment {
+  id: string;
+  business_id: string;
+  department_name: string;
+  code: string | null;
+  description: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface OrgEmployee {
+  id: string;
+  business_id: string;
+  department_id: string | null;
+  employee_code: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  job_title: string | null;
+  employment_status: EmploymentStatus;
+  hired_at: string | null; // DATE
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  // Expanded
+  department?: OrgDepartment;
+}
+
+export interface CatalogCategory {
+  id: string;
+  business_id: string;
+  parent_category_id: string | null;
+  category_name: string;
+  slug: string | null;
+  description: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface CatalogProduct {
+  id: string;
+  business_id: string;
+  sku: string | null;
+  barcode: string | null;
+  product_name: string;
+  description: string | null;
+  uom: string;
+  image_url: string | null;
+  default_price: number | null;
+  cost_price: number | null;
+  is_active: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface CartItem extends CatalogProduct {
+  quantity: number;
+}
+
+export interface CatalogProductInsert {
+  product_name: string;
+  sku?: string | null;
+  barcode?: string | null;
+  description?: string | null;
+  uom?: string;
+  default_price?: number | null;
+  cost_price?: number | null;
+  is_active?: boolean;
+  image_url?: string | null;
+  category_ids?: string[];
+}
+
+export interface CatalogProductCategory {
+  id: string;
+  business_id: string;
+  product_id: string;
+  category_id: string;
+  is_primary: boolean;
+  assigned_at: Timestamp;
+  product?: CatalogProduct;
+  category?: CatalogCategory;
+}
+
+export interface CatalogInventory {
+  id: string;
+  business_id: string;
+  product_id: string;
+  on_hand_qty: number;
+  reserved_qty: number;
+  reorder_level: number;
+  average_cost: number | null;
+  last_counted_at: Timestamp | null;
+  updated_at: Timestamp;
+  product?: CatalogProduct;
+}
+
+export interface PosCustomer {
+  id: string;
+  business_id: string;
+  customer_name: string | null;
+  email: string | null;
+  phone: string | null;
+  loyalty_number: string | null;
+  status: "active" | "inactive";
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface PosSalesOrder {
+  id: string;
+  business_id: string;
+  customer_id: string | null;
+  cashier_employee_id: string | null;
+  order_number: string | null;
+  order_date: Timestamp;
+  status: OrderStatus;
+  payment_status: PaymentStatus;
+  subtotal_amount: number;
+  discount_amount: number;
+  tax_amount: number;
+  total_amount: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  // Expanded
+  customer?: PosCustomer;
+  cashier?: OrgEmployee;
+  items?: PosSaleItem[];
+}
+
+export interface PosSaleItem {
+  id: string;
+  business_id: string;
+  sales_order_id: string;
+  product_id: string | null;
+  quantity: number;
+  unit_price: number;
+  discount_amount: number;
+  tax_amount: number;
+  line_total: number; // generated column
+  created_at: Timestamp;
+  product?: CatalogProduct;
+}
+
+export interface ProcurementSupplier {
+  id: string;
+  business_id: string;
+  supplier_name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  tax_id: string | null;
+  status: SupplierStatus;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface ProcurementProductSupplier {
+  id: string;
+  business_id: string;
+  product_id: string;
+  supplier_id: string;
+  supplier_sku: string | null;
+  cost_price: number | null;
+  min_order_qty: number;
+  lead_time_days: number | null;
+  created_at: Timestamp;
+  product?: CatalogProduct;
+  supplier?: ProcurementSupplier;
+}
+
+export interface ProcurementPurchaseOrder {
+  id: string;
+  business_id: string;
+  supplier_id: string;
+  requester_employee_id: string | null;
+  po_number: string | null;
+  order_date: Timestamp;
+  expected_date: Timestamp | null;
+  status: PurchaseOrderStatus;
+  subtotal_amount: number;
+  tax_amount: number;
+  total_amount: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  supplier?: ProcurementSupplier;
+  requester?: OrgEmployee;
+  items?: ProcurementPoItem[];
+}
+
+export interface ProcurementPoItem {
+  id: string;
+  business_id: string;
+  purchase_order_id: string;
+  product_id: string | null;
+  quantity: number;
+  unit_cost: number;
+  tax_amount: number;
+  line_total: number; // generated column
+  created_at: Timestamp;
+  product?: CatalogProduct;
+}
+
+export interface SysSetting {
+  id: string;
+  business_id: string;
+  setting_key: string;
+  setting_value: Json;
+  updated_at: Timestamp;
+}
+
+export interface SysAuditLog {
+  id: string;
+  business_id: string;
+  actor_user_id: string | null;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  before_data: Json | null;
+  after_data: Json | null;
+  request_id: string | null;
+  created_at: Timestamp;
+}
+
+export interface BusinessUserMembership {
+  business_id: string;
+  business: OrgBusiness;
+  role: Pick<AuthRole, "id" | "role_name" | "description"> | null; // single role
+  joined_at: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email?: string;
+  full_name: string | null;
+  business_users: BusinessUserMembership[];
+  current_business_id: string | null;
+}
 
 export interface Employee {
-  id: UUID;
-  user_id: UUID; // references auth.users
-  business_id: UUID;
-  designation?: string;
-  salary?: number;
-  hired_at: string; // date
+  id: string; // user_id (auth.users.id)
+  email: string | null;
+  full_name: string | null;
+  role: string | null; // primary_role
+  status: string; // employment_status
+  designation: string | null; // job_title
+  salary: number | null; // not in schema, kept for compatibility
+  hired_at: string | null;
+  business_user_id: string; // employee_id (org_employees.id)
 }
 
-export interface EmployeeBranch {
-  employee_id: UUID;
-  branch_id: UUID;
+export interface EmployeeUpdatePayload {
+  role?: string; // role_name
+  status?: string; // employment_status
+  designation?: string; // job_title
+  salary?: number; // optional, not in base schema
 }
 
-export interface Shift {
-  id: UUID;
-  employee_id: UUID;
-  branch_id: UUID;
-  start_time: string; // timestamp
-  end_time: string; // timestamp
+export interface EmployeeDetailsView {
+  employee_id: string;
+  business_id: string;
+  employee_code: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  employee_email: string | null;
+  phone: string | null;
+  job_title: string | null;
+  employment_status: EmploymentStatus;
+  hired_at: string | null;
+  user_id: string | null;
+  user_email: string | null;
+  user_full_name: string | null;
+  department_name: string | null;
+  primary_role: string | null;
 }
-
-// =========================================================
-// CUSTOMERS
-// =========================================================
-
-export interface Customer {
-  id: UUID;
-  business_id: UUID;
-  name?: string;
-  phone?: string;
-  email?: string;
-  created_at: string;
-}
-
-// =========================================================
-// ITEMS (products / services)
-// =========================================================
-
-export interface Item {
-  id: UUID;
-  business_id: UUID;
-  name: string;
-  type?: string; // 'food', 'clothing', 'service', etc.
-  sku?: string;
-  image?: string;
-  barcode?: string;
-  price: number;
-  cost?: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ItemVariant {
-  id: UUID;
-  item_id: UUID;
-  name: string;
-  sku?: string;
-  price?: number;
-}
-
-// Cart item for POS frontend
-export interface CartItem extends Item {
-  quantity: number;
-}
-
-// =========================================================
-// INVENTORY
-// =========================================================
-
-export interface Inventory {
-  id: UUID;
-  item_id: UUID;
-  branch_id: UUID;
-  quantity: number;
-  low_stock_threshold: number; // default 5
-  item?: Item;
-  branch?: Branch;
-}
-
-export interface InventoryTransaction {
-  id: UUID;
-  item_id: UUID;
-  branch_id: UUID;
-  change: number; // positive = stock in, negative = stock out
-  type: string; // 'purchase', 'sale', 'adjustment'
-  reference_id?: UUID; // order_id, purchase_id, etc.
-  created_at: string;
-}
-
-export interface ProductBatch {
-  id: UUID;
-  item_id: UUID;
-  branch_id: UUID;
-  quantity: number;
-  expiry_date?: string; // date
-  cost?: number;
-}
-
-// =========================================================
-// ORDERS
-// =========================================================
-
-export interface Order {
-  id: UUID;
-  business_id: UUID;
-  branch_id: UUID;
-  customer_id?: UUID;
-  created_by?: UUID; // user who created the order (employee)
-  order_type: string; // 'sale', 'return'
-  total_amount: number;
-  status: string; // 'completed', 'pending', 'cancelled'
-  created_at: string;
-  // Joined fields
-  customer?: Customer;
-  items?: OrderItem[];
-  payments?: Payment[];
-}
-
-export interface OrderItem {
-  id: UUID;
-  order_id: UUID;
-  item_id: UUID;
-  quantity: number;
-  price: number; // unit price at time of order
-  item?: Item;
-}
-
-export interface Payment {
-  id: UUID;
-  order_id: UUID;
-  method: PaymentMethod;
-  amount: number;
-  paid_at: string;
-}
-
-// =========================================================
-// RESTAURANT TABLES
-// =========================================================
-
-export interface Table {
-  id: UUID;
-  branch_id: UUID;
-  table_number: string;
-  capacity: number;
-  status: string; // 'available', 'occupied', 'reserved'
-}
-
-// =========================================================
-// SERVICES & APPOINTMENTS (Salon / Spa)
-// =========================================================
-
-export interface Service extends Item {
-  // Service extends Item (type = 'service')
-  duration_minutes?: number; // you may add this column later
-}
-
-export interface Appointment {
-  id: UUID;
-  business_id: UUID;
-  branch_id: UUID;
-  customer_id: UUID;
-  service_id: UUID; // references items (service type)
-  employee_id?: UUID; // references employees
-  start_time: string;
-  end_time: string;
-  status: AppointmentStatus;
-  // Joined fields
-  customer?: Customer;
-  service?: Item;
-  employee?: Employee;
-}
-
-// =========================================================
-// SUPPLIERS & PURCHASES
-// =========================================================
-
-export interface Supplier {
-  id: UUID;
-  business_id: UUID;
-  name?: string;
-  contact?: string;
-}
-
-export interface Purchase {
-  id: UUID;
-  supplier_id: UUID;
-  business_id: UUID;
-  total_amount: number;
-  created_at: string;
-  items?: PurchaseItem[];
-}
-
-export interface PurchaseItem {
-  id: UUID;
-  purchase_id: UUID;
-  item_id: UUID;
-  quantity: number;
-  cost: number;
-}
-
-// =========================================================
-// FINANCE
-// =========================================================
-
-export interface Account {
-  id: UUID;
-  business_id: UUID;
-  name: string;
-  type: string; // 'asset', 'liability', 'equity', 'income', 'expense'
-}
-
-export interface Transaction {
-  id: UUID;
-  account_id: UUID;
-  amount: number;
-  type: string; // 'income', 'expense'
-  reference_id?: UUID; // order_id, invoice_id, etc.
-  created_at: string;
-}
-
-export interface Invoice {
-  id: UUID;
-  business_id: UUID;
-  customer_id: UUID;
-  total: number;
-  status: string; // 'paid', 'pending', 'overdue'
-  due_date: string; // date
-  created_at: string;
-}
-
-// =========================================================
-// AUDIT LOGS
-// =========================================================
-
-export interface AuditLog {
-  id: UUID;
-  user_id: UUID; // references auth.users
-  action: string; // 'login', 'create_order', 'update_inventory', 'delete_item'
-  entity_type: string; // 'order', 'item', 'customer', 'inventory'
-  entity_id?: UUID;
-  metadata?: Record<string, any>; // JSONB
-  created_at: string;
-}
-
-// =========================================================
-// HELPERS & UTILITIES
-// =========================================================
-
-// Type for Supabase select queries (auto-generated by supabase-js)
-export type Tables = {
-  business_types: BusinessType;
-  features: Feature;
-  business_type_features: BusinessTypeFeature;
-  business_features: BusinessFeature;
-  businesses: Business;
-  roles: Role;
-  permissions: Permission;
-  role_permissions: RolePermission;
-  business_users: BusinessUser;
-  branches: Branch;
-  employees: Employee;
-  employee_branches: EmployeeBranch;
-  shifts: Shift;
-  customers: Customer;
-  items: Item;
-  item_variants: ItemVariant;
-  inventory: Inventory;
-  inventory_transactions: InventoryTransaction;
-  product_batches: ProductBatch;
-  orders: Order;
-  order_items: OrderItem;
-  payments: Payment;
-  tables: Table;
-  appointments: Appointment;
-  suppliers: Supplier;
-  purchases: Purchase;
-  purchase_items: PurchaseItem;
-  accounts: Account;
-  transactions: Transaction;
-  invoices: Invoice;
-  audit_logs: AuditLog;
-  user_settings: UserSettings;
-};
-
-export type ItemInsert = Omit<Item, "id" | "created_at" | "updated_at">;
-export type ItemUpdate = Partial<ItemInsert>;

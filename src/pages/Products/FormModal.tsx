@@ -1,74 +1,89 @@
 import React from "react";
-import { Item, UserProfile } from "../../data/type";
-import { Form } from "../../components/Form";
-import { SelectInput, TextInput } from "../../components/Inputs";
-import CheckboxInput from "../../components/Inputs/CheckboxInput";
-import { Button } from "../../components/Buttons";
 import * as yup from "yup";
+
+import { Form } from "../../components/Form";
+import {
+  SelectInput,
+  TextInput,
+  TextAreaInput,
+  CheckboxInput,
+} from "../../components/Inputs";
+import { Button } from "../../components/Buttons";
+
+import { CatalogProductInsert, UserProfile } from "../../data/type";
 
 interface FormModalProps {
   isVisible: boolean;
   profile: UserProfile | null;
   onClose: () => void;
-  item: Item;
+  onSubmit: (values: CatalogProductInsert) => void;
+  item: CatalogProductInsert | null; // null for new, object for edit
 }
 
-const validateSchema = yup.object().shape({
-  name: yup.string().required("Name is required"),
-  type: yup.string().required("Type is required"),
-  sku: yup.string().required("SKU is required"),
-  price: yup.number().required("Price is required"),
-  cost: yup.number().required("Cost is required"),
+const validationSchema = yup.object().shape({
+  product_name: yup.string().required("Product name is required"),
+  sku: yup.string().nullable(),
+  barcode: yup.string().nullable(),
+  description: yup.string().nullable(),
+  uom: yup.string().default("ea"),
+  default_price: yup.number().min(0, "Price must be positive").nullable(),
+  cost_price: yup.number().min(0, "Cost must be positive").nullable(),
+  is_active: yup.boolean().default(true),
+  image_url: yup.string().url("Must be a valid URL").nullable(),
 });
 
 const FormModal: React.FC<FormModalProps> = ({
   isVisible,
-  profile,
   onClose,
+  onSubmit,
   item,
 }) => {
   if (!isVisible) return null;
 
-  const initialValues = {
-    ...item,
-    business_id: profile?.current_business_id || "",
+  const initialValues: CatalogProductInsert = {
+    product_name: item?.product_name || "",
+    sku: item?.sku || "",
+    barcode: item?.barcode || "",
+    description: item?.description || "",
+    uom: item?.uom || "ea",
+    default_price: item?.default_price ?? 0,
+    cost_price: item?.cost_price ?? 0,
+    is_active: item?.is_active ?? true,
+    image_url: item?.image_url || "",
+    category_ids: item?.category_ids || [],
   };
 
-  console.log("initialValues ->", initialValues);
-
-  const handleSubmit = async (values: Item) => {
-    console.log("Values ->", values, profile);
-    onClose();
-  };
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl width-card-lg p-6">
+      <div className="bg-white rounded-xl shadow-xl w-[600px] max-h-[90vh] overflow-y-auto p-6">
         <h3 className="text-xl font-bold mb-4">
-          {item?.name ? "Edit Product" : "Add New Product"}
+          {item?.product_name ? "Edit Product" : "Add New Product"}
         </h3>
         <Form
-          key={item.id}
           initialValues={initialValues}
-          validationSchema={validateSchema}
-          onSubmit={handleSubmit}
+          validationSchema={validationSchema}
+          onSubmit={onSubmit}
           className="space-y-4"
         >
           <TextInput
-            label="Name"
-            name="name"
+            label="Product Name"
+            name="product_name"
             type="text"
-            className="mt-1 w-full rounded-lg px-3 py-2"
+            placeholder="e.g. Organic Coffee"
+            required
           />
           <SelectInput
-            label="Type"
-            name="type"
-            className="mt-1 w-full rounded-lg px-3 py-2"
+            label="Unit of Measure (UOM)"
+            name="uom"
             options={[
-              { label: "General", value: "general" },
-              { label: "Food", value: "food" },
-              { label: "Clothing", value: "clothing" },
-              { label: "Service", value: "service" },
-              { label: "Beverage", value: "beverage" },
+              { label: "Each (ea)", value: "ea" },
+              { label: "Kilogram (kg)", value: "kg" },
+              { label: "Gram (g)", value: "g" },
+              { label: "Liter (L)", value: "L" },
+              { label: "Meter (m)", value: "m" },
+              { label: "Box", value: "box" },
+              { label: "Pack", value: "pack" },
+              { label: "Hour", value: "hour" },
             ]}
           />
           <div className="grid grid-cols-2 gap-3">
@@ -76,44 +91,56 @@ const FormModal: React.FC<FormModalProps> = ({
               label="SKU"
               name="sku"
               type="text"
-              className="mt-1 w-full rounded-lg px-3 py-2"
+              placeholder="PROD-001"
             />
             <TextInput
               label="Barcode"
               name="barcode"
               type="text"
-              className="mt-1 w-full rounded-lg px-3 py-2"
+              placeholder="1234567890"
             />
           </div>
+          <TextAreaInput
+            label="Description"
+            name="description"
+            placeholder="Optional product description"
+            rows={2}
+          />
           <div className="grid grid-cols-2 gap-3">
             <TextInput
-              label="Price ($)"
-              name="price"
+              label="Default Price ($)"
+              name="default_price"
               type="number"
               step="0.01"
-              className="mt-1 w-full rounded-lg px-3 py-2"
+              min="0"
             />
             <TextInput
-              label="Cost ($)"
-              name="cost"
+              label="Cost Price ($)"
+              name="cost_price"
               type="number"
               step="0.01"
-              className="mt-1 w-full rounded-lg px-3 py-2"
+              min="0"
             />
           </div>
+          <TextInput
+            label="Image URL"
+            name="image_url"
+            type="text"
+            placeholder="https://example.com/image.jpg"
+          />
           <div className="flex items-center">
             <CheckboxInput
-              label="Active"
+              label="Active (available for sale)"
               name="is_active"
-              className="mt-1 w-full rounded-lg px-3 py-2"
             />
           </div>
+          {/* Category selection can be added here if needed */}
           <div className="flex justify-end space-x-3 pt-4">
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button inForm={true} type="submit" variant="primary">
-              {item?.name ? "Update" : "Create"}
+              {item?.product_name ? "Update" : "Create"}
             </Button>
           </div>
         </Form>
