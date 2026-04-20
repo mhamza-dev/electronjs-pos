@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { businessService } from "../../services/business";
+import { authService } from "../../services";
 
 interface POSLayoutProps {
   children: React.ReactNode;
@@ -10,21 +10,35 @@ interface POSLayoutProps {
 const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, session, signOut, refreshProfile } = useAuth();
-  const [businessName, setBusinessName] = React.useState<string>("POS PRO");
+  const { profile, refreshProfile, signOut } = useAuth();
 
-  React.useEffect(() => {
-    setBusinessName(profile?.business_users?.[0]?.business?.name || "POS PRO");
-    // businessService.getMyBusinesses();
-  }, [profile]);
+  // Find current business from profile using current_business_id
+  const currentBusinessMembership = profile?.business_users.find(
+    (bu) => bu.business_id === profile.current_business_id,
+  );
+
+  const currentBusinessName =
+    currentBusinessMembership?.business.business_name || "POS PRO";
+  const currentRole = currentBusinessMembership?.role?.role_name || "Staff";
+
+  // Available businesses for switching
+  const availableBusinesses = profile?.business_users || [];
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
   };
 
-  const handleChangeBusiness = async (businessId: string) => {
-    // await refreshProfile(session?.user, businessId);
+  const handleSwitchBusiness = async (businessId: string) => {
+    if (!profile?.id) return;
+    try {
+      await authService.switchBusiness(profile.id, businessId);
+      await refreshProfile();
+      // Optionally reload page or just let state update
+    } catch (error) {
+      console.error("Failed to switch business:", error);
+      alert("Could not switch business.");
+    }
   };
 
   const menuItems = [
@@ -89,8 +103,7 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
   ];
 
   const filteredMenuItems = menuItems.filter(
-    (item) =>
-      !item.adminOnly || profile?.business_users?.[0]?.role_name === "admin",
+    (item) => !item.adminOnly || currentRole === "admin",
   );
 
   return (
@@ -114,12 +127,12 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
             </svg>
           </div>
           <span className="text-xl font-black text-gray-800 tracking-tight truncate max-w-[180px]">
-            {businessName === "POS PRO" ? (
+            {currentBusinessName === "POS PRO" ? (
               <>
                 POS<span className="text-primary">PRO</span>
               </>
             ) : (
-              businessName
+              currentBusinessName
             )}
           </span>
         </div>
@@ -178,12 +191,28 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
         <header className="h-height-header bg-white border-b border-gray-200 flex items-center justify-between px-lg flex-shrink-0">
           <h1 className="text-lg font-semibold text-gray-800">New Sale</h1>
           <div className="flex items-center space-x-md">
+            {/* Business Switcher Dropdown */}
+            {availableBusinesses.length > 1 && (
+              <div className="relative">
+                <select
+                  value={profile?.current_business_id || ""}
+                  onChange={(e) => handleSwitchBusiness(e.target.value)}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {availableBusinesses.map((b) => (
+                    <option key={b.business_id} value={b.business_id}>
+                      {b.business.business_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="text-right hidden sm:block">
               <div className="text-sm font-bold text-gray-800 leading-none">
                 {profile?.full_name || "User"}
               </div>
               <div className="text-xs text-gray-400 capitalize">
-                {profile?.business_users?.[0]?.role_name || "Staff"}
+                {currentRole}
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary font-bold shadow-sm">
@@ -195,7 +224,7 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-lg">{children}</main>
 
-        {/* Footer (Optional) */}
+        {/* Footer */}
         <footer className="h-height-footer bg-white border-t border-gray-200 flex items-center px-lg text-sm text-gray-400 flex-shrink-0">
           &copy; 2026 POS System v1.0.0
         </footer>

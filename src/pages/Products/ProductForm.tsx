@@ -7,6 +7,7 @@ import {
   TextInput,
   TextAreaInput,
   CheckboxInput,
+  FileInput,
 } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
 
@@ -32,7 +33,7 @@ const validationSchema = yup.object().shape({
   image_url: yup.string().url("Must be a valid URL").nullable(),
 });
 
-const FormModal: React.FC<FormModalProps> = ({
+const ProductForm: React.FC<FormModalProps> = ({
   isVisible,
   onClose,
   onSubmit,
@@ -122,11 +123,13 @@ const FormModal: React.FC<FormModalProps> = ({
               min="0"
             />
           </div>
-          <TextInput
-            label="Image URL"
-            name="image_url"
-            type="text"
-            placeholder="https://example.com/image.jpg"
+          <FileInput
+            name="product_image"
+            label="Product Image"
+            accept="image/png, image/jpeg, image/webp"
+            storeAs="base64" // or "file"
+            showPreview
+            maxSizeMB={5}
           />
           <div className="flex items-center">
             <CheckboxInput
@@ -149,4 +152,4 @@ const FormModal: React.FC<FormModalProps> = ({
   );
 };
 
-export default FormModal;
+export default ProductForm;

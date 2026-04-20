@@ -5,7 +5,7 @@ import { catalogService } from "../../services";
 import { useAPI } from "../../hooks/useAPI";
 import { CatalogProduct, CatalogProductInsert } from "../../data/type";
 import { Button } from "../../components/Buttons";
-import FormModal from "./FormModal";
+import ProductForm from "./ProductForm";
 
 const ProductsPage: React.FC = () => {
   const { profile } = useAuth();
@@ -251,7 +251,7 @@ const ProductsPage: React.FC = () => {
         )}
       </div>
       {showModal && (
-        <FormModal
+        <ProductForm
           isVisible={showModal}
           profile={profile}
           onClose={handleCloseModal}
