@@ -238,9 +238,10 @@ const DashboardPage: React.FC = () => {
 
         <!-- Items Header -->
         <div class="item-row" style="font-weight: bold; margin-bottom: 8px;">
-          <span class="item-qty">QTY</span>
-          <span class="item-name">ITEM</span>
-          <span class="item-price">PRICE</span>
+        <span class="item-name">ITEM</span>
+        <span class="item-price">UNIT PRICE</span>
+        <span class="item-qty">QTY</span>
+        <span class="item-price">PRICE</span>
         </div>
 
         <!-- Items -->
@@ -248,9 +249,10 @@ const DashboardPage: React.FC = () => {
           .map(
             (item) => `
           <div class="item-row">
-            <span class="item-qty">${item.quantity}</span>
-            <span class="item-name">${item.product_name}</span>
-            <span class="item-price">$${((item.default_price || 0) * item.quantity).toFixed(2)}</span>
+          <span class="item-name">${item.product_name}</span>
+          <span class="item-price">$${(item.default_price || 0).toFixed(2)}</span>
+          <span class="item-qty">${item.quantity}</span>
+          <span class="item-price">$${((item.default_price || 0) * item.quantity).toFixed(2)}</span>
           </div>
         `,
           )
