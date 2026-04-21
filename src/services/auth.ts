@@ -189,4 +189,28 @@ export const authService = {
     if (error) throw error;
     return data.user ?? null;
   },
+
+  // authService additions
+  async updateProfile(values: {
+    full_name: string;
+    email?: string;
+  }): Promise<User> {
+    const { data: userResponse, error } = await supabase.auth.updateUser({
+      data: { full_name: values.full_name },
+    });
+    if (error) throw error;
+
+    return userResponse.user;
+  },
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<User> {
+    // First re-authenticate or use supabase.auth.updateUser with password
+    const { data: userResponse, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    if (error) throw error;
+    return userResponse.user;
+  },
 };

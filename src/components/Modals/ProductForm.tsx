@@ -1,15 +1,15 @@
 import React from "react";
 import * as yup from "yup";
 
-import { Form } from "../../components/Form";
+import { Form } from "../Form";
 import {
   SelectInput,
   TextInput,
   TextAreaInput,
   CheckboxInput,
   FileInput,
-} from "../../components/Inputs";
-import { Button } from "../../components/Buttons";
+} from "../Inputs";
+import { Button } from "../Buttons";
 
 import { CatalogProductInsert, UserProfile } from "../../data/type";
 
