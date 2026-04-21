@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import POSLayout from "../../components/Layout/POSLayout";
 import { CatalogProduct, CartItem } from "../../data/type";
 import { useAuth } from "../../contexts/AuthContext";
 import { catalogService, posService } from "../../services";
@@ -99,7 +98,7 @@ const DashboardPage: React.FC = () => {
     const businessName =
       profile?.business_users?.find(
         (bu) => bu.business_id === profile.current_business_id,
-      )?.business.business_name || "POS PRO";
+      )?.business.business_name || "Vendora PRO";
 
     const date = new Date();
     const formattedDate = date.toLocaleDateString("en-US", {
@@ -318,94 +317,92 @@ const DashboardPage: React.FC = () => {
   );
 
   return (
-    <POSLayout>
-      <div className="flex h-full space-x-lg overflow-hidden">
-        {/* Product Grid */}
-        <div className="flex-1 flex flex-col space-y-lg min-w-0 overflow-hidden">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Available Products
-            </h2>
-            <Form
-              initialValues={{ searchQuery: "" }}
-              onSubmit={(values) => setSearchQuery(values.searchQuery)}
-              validateOnChange={true}
-            >
-              <TextInput
-                name="searchQuery"
-                type="text"
-                placeholder="Search products..."
-                className="w-64"
-              />
-            </Form>
-          </div>
-
-          <div className="flex-1 overflow-y-auto pr-sm">
-            <div
-              className={`grid gap-lg pb-lg ${cart.length > 0 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}
-            >
-              {filteredProducts.map((product: CatalogProduct) => (
-                <div
-                  key={product.id}
-                  onClick={() => addToCart(product)}
-                  className="bg-white border border-gray-100 rounded-xl shadow-sm p-lg hover:shadow-md transition-shadow cursor-pointer group"
-                >
-                  {" "}
-                  {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.product_name}
-                      className="w-64 h-64 object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-gray-300 text-4xl font-bold mb-lg group-hover:bg-primary-50 group-hover:text-primary transition-colors">
-                      {product.product_name.charAt(0)}
-                    </div>
-                  )}
-                  <div className="flex flex-col space-y-xs">
-                    <span className="text-lg font-bold text-gray-800 truncate">
-                      {product.product_name}
-                    </span>
-                    <span className="text-sm text-gray-400">
-                      {product.sku || "No SKU"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between mt-xl">
-                    <span className="text-xl font-black text-primary">
-                      ${(product.default_price || 0).toFixed(2)}
-                    </span>
-                    <button className="p-sm bg-gray-50 group-hover:bg-primary group-hover:text-white rounded-lg transition-colors text-gray-400">
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+    <div className="flex h-full space-x-lg overflow-hidden">
+      {/* Product Grid */}
+      <div className="flex-1 flex flex-col space-y-lg min-w-0 overflow-hidden">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Available Products
+          </h2>
+          <Form
+            initialValues={{ searchQuery: "" }}
+            onSubmit={(values) => setSearchQuery(values.searchQuery)}
+            validateOnChange={true}
+          >
+            <TextInput
+              name="searchQuery"
+              type="text"
+              placeholder="Search products..."
+              className="w-64"
+            />
+          </Form>
         </div>
 
-        {cart.length > 0 && (
-          <Cart
-            items={cart}
-            onUpdateQuantity={updateQuantity}
-            onRemoveItem={removeCartItem}
-            onCheckout={handleCheckout}
-          />
-        )}
+        <div className="flex-1 overflow-y-auto pr-sm">
+          <div
+            className={`grid gap-lg pb-lg ${cart.length > 0 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}
+          >
+            {filteredProducts.map((product: CatalogProduct) => (
+              <div
+                key={product.id}
+                onClick={() => addToCart(product)}
+                className="bg-white border border-gray-100 rounded-xl shadow-sm p-lg hover:shadow-md transition-shadow cursor-pointer group"
+              >
+                {" "}
+                {product.image_url ? (
+                  <img
+                    src={product.image_url}
+                    alt={product.product_name}
+                    className="w-64 h-64 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-gray-300 text-4xl font-bold mb-lg group-hover:bg-primary-50 group-hover:text-primary transition-colors">
+                    {product.product_name.charAt(0)}
+                  </div>
+                )}
+                <div className="flex flex-col space-y-xs">
+                  <span className="text-lg font-bold text-gray-800 truncate">
+                    {product.product_name}
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    {product.sku || "No SKU"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-xl">
+                  <span className="text-xl font-black text-primary">
+                    ${(product.default_price || 0).toFixed(2)}
+                  </span>
+                  <button className="p-sm bg-gray-50 group-hover:bg-primary group-hover:text-white rounded-lg transition-colors text-gray-400">
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </POSLayout>
+
+      {cart.length > 0 && (
+        <Cart
+          items={cart}
+          onUpdateQuantity={updateQuantity}
+          onRemoveItem={removeCartItem}
+          onCheckout={handleCheckout}
+        />
+      )}
+    </div>
   );
 };
 

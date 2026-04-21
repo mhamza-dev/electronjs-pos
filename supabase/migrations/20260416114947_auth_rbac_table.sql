@@ -16,7 +16,7 @@ CREATE TABLE auth_user_business_roles (
     role_id UUID NOT NULL REFERENCES auth_roles(id) ON DELETE CASCADE,
     assigned_by_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     assigned_at TIMESTAMP DEFAULT NOW(),
-    UNIQUE(business_id, user_id, role_id)
+    UNIQUE(business_id, user_id)
 );
 
 CREATE TABLE auth_role_permissions (

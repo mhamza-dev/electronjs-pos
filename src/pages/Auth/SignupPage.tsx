@@ -6,6 +6,7 @@ import { Button } from "../../components/Buttons";
 import { businessService, rbacService, authService } from "../../services";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAPI } from "../../hooks/useAPI";
+import logo from "../../assets/logo.svg";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -73,28 +74,14 @@ const SignupPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 font-poppins">
       <div className="w-width-card-lg p-lg bg-white rounded-xl shadow-lg border border-gray-100">
-        <div className="flex justify-center mb-xl">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white">
-            <svg
-              className="w-10 h-10"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          </div>
+        <div className="flex justify-center mb-md">
+          <img src={logo} alt="Vendora" className="w-24 h-24" />
         </div>
-        <h2 className="text-3xl font-black text-center mb-xs text-gray-900 tracking-tight">
+        <h2 className="text-2xl font-bold text-center mb-xs text-gray-900 tracking-tight">
           Create Account
         </h2>
-        <p className="text-center text-gray-400 mb-xl font-medium">
-          Get started with your POS account
+        <p className="text-center text-gray-400 mb-md font-medium">
+          Get started with your Vendora account
         </p>
 
         {errorMessage && (

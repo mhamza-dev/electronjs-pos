@@ -1,15 +1,15 @@
 import React from "react";
 import * as yup from "yup";
 
-import { Form } from "../../components/Form";
+import { Form } from "../Form";
 import {
   SelectInput,
   TextInput,
   TextAreaInput,
   CheckboxInput,
   FileInput,
-} from "../../components/Inputs";
-import { Button } from "../../components/Buttons";
+} from "../Inputs";
+import { Button } from "../Buttons";
 
 import { CatalogProductInsert, UserProfile } from "../../data/type";
 
@@ -56,7 +56,7 @@ const ProductForm: React.FC<FormModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-[600px] max-h-[90vh] overflow-y-auto p-6">
+      <div className="bg-white rounded-xl shadow-xlwidth-container-md max-h-[90vh] overflow-y-auto p-6">
         <h3 className="text-xl font-bold mb-4">
           {item?.product_name ? "Edit Product" : "Add New Product"}
         </h3>

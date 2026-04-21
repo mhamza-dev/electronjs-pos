@@ -112,8 +112,9 @@ export const rbacService = {
         user_id: userId,
         role_id: roleId,
         assigned_by_user_id: assignedByUserId,
+        assigned_at: new Date().toISOString(),
       },
-      { onConflict: "business_id,user_id,role_id" },
+      { onConflict: "business_id,user_id" }, // if conflict, update role_id
     );
     if (error) throw error;
   },

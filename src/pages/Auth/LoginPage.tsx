@@ -4,6 +4,7 @@ import { Form } from "../../components/Form";
 import { TextInput } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
 import { supabase } from "../../lib/supabase";
+import logo from "../../assets/logo.svg";
 
 interface LoginProps {
   email: string;
@@ -33,28 +34,14 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 font-poppins">
       <div className="w-width-card-lg p-lg bg-white rounded-xl shadow-lg border border-gray-100">
-        <div className="flex justify-center mb-xl">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white">
-            <svg
-              className="w-10 h-10"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 11V7a4 4 0 118 0m-4 8a2 2 0 110-4 2 2 0 010 4zm-8 8a2 2 0 110-4 2 2 0 010 4zm-4-8a2 2 0 110-4 2 2 0 010 4zm0 0V7a4 4 0 018 0v4m-8 8a2 2 0 110-4 2 2 0 010 4z"
-              />
-            </svg>
-          </div>
+        <div className="flex justify-center mb-md">
+          <img src={logo} alt="Vendora" className="w-24 h-24" />
         </div>
-        <h2 className="text-3xl font-black text-center mb-xs text-gray-900 tracking-tight">
+        <h2 className="text-xl font-bold text-center mb-xs text-gray-900 tracking-tight">
           Welcome Back
         </h2>
-        <p className="text-center text-gray-400 mb-xl font-medium">
-          Please login to your POS account
+        <p className="text-center text-gray-400 mb-md font-medium">
+          Please login to your Vendora account
         </p>
 
         {error && (

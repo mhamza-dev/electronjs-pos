@@ -1,15 +1,20 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { HiHome, HiCube, HiCog, HiTruck } from "react-icons/hi";
 import { useAuth } from "../../contexts/AuthContext";
 import { authService } from "../../services";
+import logo from "../../assets/logo.svg";
 
-interface POSLayoutProps {
+interface AuthenticatedLayoutProps {
   children: React.ReactNode;
 }
 
-const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
+const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
+  children,
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const path = location.pathname;
   const { profile, refreshProfile, signOut } = useAuth();
 
   // Find current business from profile using current_business_id
@@ -18,7 +23,7 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
   );
 
   const currentBusinessName =
-    currentBusinessMembership?.business.business_name || "POS PRO";
+    currentBusinessMembership?.business.business_name || "Vendora PRO";
   const currentRole = currentBusinessMembership?.role?.role_name || "Staff";
 
   // Available businesses for switching
@@ -45,60 +50,26 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
     {
       name: "Dashboard",
       path: "/dashboard",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
-      ),
+      adminOnly: false,
+      icon: <HiHome className="w-5 h-5" />,
     },
     {
       name: "Products",
       path: "/products",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 11m8 4V5"
-          />
-        </svg>
-      ),
+      adminOnly: false,
+      icon: <HiCube className="w-5 h-5" />,
     },
     {
-      name: "Employees",
-      path: "/employees",
+      name: "Procurement",
+      path: "/procurement",
       adminOnly: true,
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-          />
-        </svg>
-      ),
+      icon: <HiTruck className="w-5 h-5" />,
+    },
+    {
+      name: "Settings",
+      path: "/settings",
+      adminOnly: false,
+      icon: <HiCog className="w-5 h-5" />,
     },
   ];
 
@@ -111,25 +82,11 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <aside className="w-width-sidebar flex-shrink-0 bg-white border-r border-gray-200 flex flex-col shadow-sm">
         <div className="h-height-header flex items-center px-lg border-b border-gray-200">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white mr-sm">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 11V7a4 4 0 118 0m-4 8a2 2 0 110-4 2 2 0 010 4zm-8 8a2 2 0 110-4 2 2 0 010 4zm-4-8a2 2 0 110-4 2 2 0 010 4zm0 0V7a4 4 0 018 0v4m-8 8a2 2 0 110-4 2 2 0 010 4z"
-              />
-            </svg>
-          </div>
+          <img src={logo} alt="logoWithName" className="w-10 h-10 mr-sm" />
           <span className="text-xl font-black text-gray-800 tracking-tight truncate max-w-[180px]">
-            {currentBusinessName === "POS PRO" ? (
+            {currentBusinessName === "Vendora PRO" ? (
               <>
-                POS<span className="text-primary">PRO</span>
+                Vendora<span className="text-primary">PRO</span>
               </>
             ) : (
               currentBusinessName
@@ -189,7 +146,10 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <header className="h-height-header bg-white border-b border-gray-200 flex items-center justify-between px-lg flex-shrink-0">
-          <h1 className="text-lg font-semibold text-gray-800">New Sale</h1>
+          <h1 className="text-xl font-bold">
+            {menuItems.find((item) => item.path === path)?.name ||
+              "Vendora PRO"}
+          </h1>
           <div className="flex items-center space-x-md">
             {/* Business Switcher Dropdown */}
             {availableBusinesses.length > 1 && (
@@ -226,11 +186,11 @@ const POSLayout: React.FC<POSLayoutProps> = ({ children }) => {
 
         {/* Footer */}
         <footer className="h-height-footer bg-white border-t border-gray-200 flex items-center px-lg text-sm text-gray-400 flex-shrink-0">
-          &copy; 2026 POS System v1.0.0
+          &copy; 2026 Vendora PRO v1.0.0
         </footer>
       </div>
     </div>
   );
 };
 
-export default POSLayout;
+export default AuthenticatedLayout;
