@@ -12,23 +12,25 @@ DECLARE
         'owner1@example.com', 'owner2@example.com', 'owner3@example.com',
         'owner4@example.com', 'owner5@example.com', 'owner6@example.com'
     ];
-    employee_emails text[] := ARRAY[
-        'emp1@example.com', 'emp2@example.com', 'emp3@example.com',
-        'emp4@example.com', 'emp5@example.com', 'emp6@example.com',
-        'emp7@example.com', 'emp8@example.com', 'emp9@example.com',
-        'emp10@example.com'
-    ];
+    -- Create 45 employees (9 businesses × 5 employees each)
+    employee_emails text[];
     all_emails text[];
     full_names text[];
     v_user_id uuid;
     i int;
 BEGIN
-    all_emails := owner_emails || employee_emails;
+    -- Generate employee emails emp1..emp45@example.com
+    FOR i IN 1..45 LOOP
+        employee_emails := array_append(employee_emails, 'emp' || i || '@example.com');
+        full_names := array_append(full_names, 'Employee ' || i);
+    END LOOP;
+
+    -- Prepend owner full names
     full_names := ARRAY[
-        'Alice Owner', 'Bob Owner', 'Carol Owner', 'Dave Owner', 'Eve Owner', 'Frank Owner',
-        'Grace Employee', 'Henry Employee', 'Ivy Employee', 'Jack Employee', 'Karen Employee',
-        'Leo Employee', 'Mona Employee', 'Nina Employee', 'Oscar Employee', 'Paul Employee'
-    ];
+        'Alice Owner', 'Bob Owner', 'Carol Owner', 'Dave Owner', 'Eve Owner', 'Frank Owner'
+    ] || full_names;
+
+    all_emails := owner_emails || employee_emails;
 
     FOR i IN 1..array_length(all_emails, 1) LOOP
         IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = all_emails[i]) THEN
@@ -187,7 +189,7 @@ BEGIN
 END $$;
 
 -- ---------------------------------------------------------
--- 5. Assign Users to Businesses with Roles
+-- 5. Assign Users to Businesses with Roles (one role per business)
 -- ---------------------------------------------------------
 DO $$
 DECLARE
@@ -208,9 +210,12 @@ BEGIN
         SELECT id INTO role_admin_id FROM auth_roles WHERE business_id = b.id AND role_name = 'admin';
         INSERT INTO auth_user_business_roles (business_id, user_id, role_id, assigned_by_user_id)
         VALUES (b.id, b.owner_user_id, role_admin_id, b.owner_user_id)
-        ON CONFLICT (business_id, user_id, role_id) DO NOTHING;
+        ON CONFLICT (business_id, user_id) DO UPDATE SET
+            role_id = EXCLUDED.role_id,
+            assigned_by_user_id = EXCLUDED.assigned_by_user_id,
+            assigned_at = NOW();
 
-        -- Employee roles
+        -- Employee roles: first 2 employees in this business get manager, rest cashier
         SELECT id INTO role_manager_id FROM auth_roles WHERE business_id = b.id AND role_name = 'manager';
         SELECT id INTO role_cashier_id FROM auth_roles WHERE business_id = b.id AND role_name = 'cashier';
 
@@ -218,7 +223,10 @@ BEGIN
             assigned_role_id := CASE WHEN emp_idx <= 2 THEN role_manager_id ELSE role_cashier_id END;
             INSERT INTO auth_user_business_roles (business_id, user_id, role_id, assigned_by_user_id)
             VALUES (b.id, employee_ids[emp_idx], assigned_role_id, b.owner_user_id)
-            ON CONFLICT (business_id, user_id, role_id) DO NOTHING;
+            ON CONFLICT (business_id, user_id) DO UPDATE SET
+                role_id = EXCLUDED.role_id,
+                assigned_by_user_id = EXCLUDED.assigned_by_user_id,
+                assigned_at = NOW();
         END LOOP;
     END LOOP;
 END $$;
@@ -237,7 +245,7 @@ FROM org_businesses b
 WHERE NOT EXISTS (SELECT 1 FROM org_departments WHERE business_id = b.id AND department_name = 'Operations');
 
 -- ---------------------------------------------------------
--- 7. Employees
+-- 7. Employees (each employee user assigned to ONE business only)
 -- ---------------------------------------------------------
 DO $$
 DECLARE
@@ -248,15 +256,29 @@ DECLARE
     v_full_name text;
     v_first_name text;
     v_last_name text;
+    employee_counter int := 1;
+    employees_per_business int := 5;
 BEGIN
-    FOR emp_user IN SELECT u.id, u.email, u.raw_user_meta_data->>'full_name' AS full_name
-                    FROM auth.users u
-                    WHERE u.email LIKE 'emp%@example.com' LOOP
-        v_full_name := emp_user.full_name;
-        v_first_name := split_part(v_full_name, ' ', 1);
-        v_last_name := split_part(v_full_name, ' ', 2);
+    -- Loop through businesses
+    FOR b IN SELECT id FROM org_businesses ORDER BY business_name LOOP
+        -- For each business, take the next batch of 5 employees
+        FOR i IN 1..employees_per_business LOOP
+            -- Get the next employee user (by order of email)
+            SELECT u.id, u.email, u.raw_user_meta_data->>'full_name' AS full_name
+            INTO emp_user
+            FROM auth.users u
+            WHERE u.email LIKE 'emp%@example.com'
+            ORDER BY u.email
+            LIMIT 1 OFFSET (employee_counter - 1);
 
-        FOR b IN SELECT id FROM org_businesses LOOP
+            IF emp_user IS NULL THEN
+                EXIT; -- No more employees
+            END IF;
+
+            v_full_name := emp_user.full_name;
+            v_first_name := split_part(v_full_name, ' ', 1);
+            v_last_name := split_part(v_full_name, ' ', 2);
+
             SELECT id INTO dept_id FROM org_departments WHERE business_id = b.id AND department_name = 'Sales' LIMIT 1;
             v_employee_code := 'EMP' || substr(md5(random()::text), 1, 6);
 
@@ -275,6 +297,8 @@ BEGIN
                 'active',
                 CURRENT_DATE - (random() * 365)::int
             );
+
+            employee_counter := employee_counter + 1;
         END LOOP;
     END LOOP;
 END $$;
@@ -329,7 +353,7 @@ BEGIN
 END $$;
 
 -- ---------------------------------------------------------
--- 9. POS Customers
+-- 9. Vendora Customers
 -- ---------------------------------------------------------
 DO $$
 DECLARE

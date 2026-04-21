@@ -6,18 +6,21 @@ import { Button } from "../../components/Buttons";
 import { PermissionModal, RoleFormModal } from "../../components/Modals";
 
 const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
-  const {
-    data: roles,
-    loading,
-    request: fetchRoles,
-  } = useAPI(() => rbacService.getRoles(businessId));
-  const { data: permissions } = useAPI(rbacService.getAllPermissions);
+  const { data: roles, request: fetchRoles } = useAPI(() =>
+    rbacService.getRoles(businessId),
+  );
+  const { data: permissions, request: fetchPermissions } = useAPI(
+    rbacService.getAllPermissions,
+  );
   const [editingRole, setEditingRole] = useState<AuthRole | null>(null);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   useEffect(() => {
     fetchRoles();
-  }, [businessId]);
+    fetchPermissions();
+  }, []);
+
+  console.log("Permissions ->", permissions);
 
   const handleSaveRole = async (role: Partial<AuthRole>) => {
     if (role.id) {

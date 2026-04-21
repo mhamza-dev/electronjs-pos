@@ -153,4 +153,11 @@ export const procurementService = {
       .eq("id", poId);
     if (updateError) throw updateError;
   },
+  async deleteSupplier(supplierId: string): Promise<void> {
+    const { error } = await supabase
+      .from("procurement_suppliers")
+      .delete()
+      .eq("id", supplierId);
+    if (error) throw error;
+  },
 };

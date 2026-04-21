@@ -1,58 +1,43 @@
 import React, { useState } from "react";
 import { Button } from "../../components/Buttons";
-import { AuthRole } from "../../data/type";
+import { AuthRole, Employee } from "../../data/type";
+import { Form } from "../Form";
+import { SelectInput } from "../Inputs";
 
 interface RoleAssignmentModalProps {
-  userId: string;
-  businessId: string;
+  selectedUser: Employee;
   roles: AuthRole[];
-  currentRole: string | null;
-  onAssign: (userId: string, roleId: string) => void;
+  onAssign: (values: { role_id: string }) => void;
   onClose: () => void;
 }
 
 const RoleAssignmentModal: React.FC<RoleAssignmentModalProps> = ({
-  userId,
-  businessId,
+  selectedUser,
   roles,
-  currentRole,
   onAssign,
   onClose,
 }) => {
-  const [selectedRoleId, setSelectedRoleId] = useState(
-    roles.find((r) => r.role_name === currentRole)?.id || "",
-  );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedRoleId) {
-      onAssign(userId, selectedRoleId);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+      <div className="bg-white rounded-xl shadow-xl width-container-md p-6">
         <h3 className="text-xl font-bold mb-4">Change Role</h3>
-        <form onSubmit={handleSubmit}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Select Role
-          </label>
-          <select
-            value={selectedRoleId}
-            onChange={(e) => setSelectedRoleId(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+        <Form
+          initialValues={{
+            role_id:
+              roles.find((role) => role.role_name === selectedUser.role)?.id ||
+              "",
+          }}
+          onSubmit={(values) => onAssign(values)}
+        >
+          <SelectInput
+            name="role_id"
+            label="Role"
             required
-          >
-            <option value="" disabled>
-              Select a role
-            </option>
-            {roles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.role_name}
-              </option>
-            ))}
-          </select>
+            options={roles.map((role) => ({
+              label: role.role_name,
+              value: role.id,
+            }))}
+          />
           <div className="flex justify-end space-x-3 mt-6">
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
@@ -61,7 +46,7 @@ const RoleAssignmentModal: React.FC<RoleAssignmentModalProps> = ({
               Assign
             </Button>
           </div>
-        </form>
+        </Form>
       </div>
     </div>
   );

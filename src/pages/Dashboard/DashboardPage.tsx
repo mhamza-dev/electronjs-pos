@@ -98,7 +98,7 @@ const DashboardPage: React.FC = () => {
     const businessName =
       profile?.business_users?.find(
         (bu) => bu.business_id === profile.current_business_id,
-      )?.business.business_name || "POS PRO";
+      )?.business.business_name || "Vendora PRO";
 
     const date = new Date();
     const formattedDate = date.toLocaleDateString("en-US", {

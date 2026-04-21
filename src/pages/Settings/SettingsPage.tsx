@@ -50,23 +50,29 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="mx-auto py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
-      <Tabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        {activeTab === 0 && (
-          <ProfileSettings profile={profile} onUpdate={refreshProfile} />
-        )}
-        {activeTab === 1 && isAdmin && (
-          <BusinessSettings businessId={currentBusinessId!} />
-        )}
-        {activeTab === 2 && isAdmin && (
-          <UserManagement businessId={currentBusinessId!} />
-        )}
-        {activeTab === 3 && isAdmin && (
-          <RoleManagement businessId={currentBusinessId!} />
-        )}
-        {activeTab === 4 && (isAdmin || isOwner) && <BusinessesOverview />}
+    <div className="mx-auto h-full flex flex-col">
+      {/* Sticky Tabs */}
+      <div className="sticky top-0 z-10 bg-gray-50 pt-4 -mt-4">
+        <Tabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto mt-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          {activeTab === 0 && (
+            <ProfileSettings profile={profile} onUpdate={refreshProfile} />
+          )}
+          {activeTab === 1 && isAdmin && (
+            <BusinessSettings businessId={currentBusinessId!} />
+          )}
+          {activeTab === 2 && isAdmin && (
+            <UserManagement businessId={currentBusinessId!} />
+          )}
+          {activeTab === 3 && isAdmin && (
+            <RoleManagement businessId={currentBusinessId!} />
+          )}
+          {activeTab === 4 && (isAdmin || isOwner) && <BusinessesOverview />}
+        </div>
       </div>
     </div>
   );

@@ -11,7 +11,8 @@ import EmployeesPage from "./pages/Employees/EmployeesPage";
 import ProductsPage from "./pages/Products/ProductsPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import SettingsPage from "./pages/Settings/SettingsPage";
-import POSLayout from "./components/Layout/POSLayout";
+import AuthenticatedLayout from "./components/Layout/AuthenticatedLayout";
+import ProcurementPage from "./pages/Procurement/ProcurementPage";
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -23,7 +24,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
       <div className="min-h-screen flex items-center justify-center bg-gray-50 font-poppins">
         <div className="flex flex-col items-center space-y-md">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-500 font-bold">Loading POS...</span>
+          <span className="text-gray-500 font-bold">Loading Vendora...</span>
         </div>
       </div>
     );
@@ -33,7 +34,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
     return <Navigate to="/login" replace />;
   }
 
-  return <POSLayout>{children}</POSLayout>;
+  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
 };
 
 const App: React.FC = () => {
@@ -45,7 +46,7 @@ const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
 
-          {/* Protected Routes (POS) */}
+          {/* Protected Routes (Vendora) */}
           <Route
             path="/dashboard"
             element={
@@ -75,6 +76,15 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/procurement"
+            element={
+              <ProtectedRoute>
+                <ProcurementPage />
               </ProtectedRoute>
             }
           />

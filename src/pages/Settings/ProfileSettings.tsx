@@ -21,23 +21,31 @@ const ProfileSettings: React.FC<{
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Profile Information</h2>
-      <Form
-        initialValues={{
-          full_name: profile?.full_name || "",
-          email: profile?.email || "",
-        }}
-        onSubmit={updateProfile}
-      >
-        <TextInput name="full_name" label="Full Name" required />
-        <TextInput name="email" label="Email" type="email" disabled />
-        <div className="mt-4">
-          <Button type="submit" loading={loading}>
-            Save Changes
-          </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Left Column: Profile Form */}
+        <div className="col-span-1">
+          <Form
+            initialValues={{
+              full_name: profile?.full_name || "",
+              email: profile?.email || "",
+            }}
+            onSubmit={updateProfile}
+          >
+            <TextInput name="full_name" label="Full Name" required />
+            <TextInput name="email" label="Email" type="email" disabled />
+            <div className="mt-4">
+              <Button type="submit" loading={loading}>
+                Save Changes
+              </Button>
+            </div>
+          </Form>
         </div>
-      </Form>
-      <hr className="my-6" />
-      <ChangePassword />
+
+        {/* Right Column: Change Password */}
+        <div className="col-span-1">
+          <ChangePassword />
+        </div>
+      </div>
     </div>
   );
 };
