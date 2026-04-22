@@ -1,4 +1,3 @@
-// pages/SettingsPage.tsx
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import ProfileSettings from "./ProfileSettings";
@@ -6,26 +5,33 @@ import BusinessSettings from "./BusinessSettings";
 import UserManagement from "./UserManagement";
 import RoleManagement from "./RoleManagement";
 import BusinessesOverview from "./BusinessOverview";
+import { User, Building2, Users, Shield, Store, Settings } from "lucide-react";
 
-// Tab component
+interface TabItem {
+  name: string;
+  icon: React.ReactNode;
+  adminOnly?: boolean;
+}
+
 const Tabs: React.FC<{
-  tabs: string[];
+  tabs: TabItem[];
   active: number;
   onChange: (idx: number) => void;
 }> = ({ tabs, active, onChange }) => (
-  <div className="border-b border-gray-200 mb-6">
-    <nav className="flex space-x-8">
+  <div className="border-b border-gray-200">
+    <nav className="flex space-x-1">
       {tabs.map((tab, idx) => (
         <button
           key={idx}
           onClick={() => onChange(idx)}
-          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+          className={`flex items-center gap-sm px-lg py-md text-sm font-medium transition-all border-b-2 -mb-px ${
             active === idx
               ? "border-primary text-primary"
               : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
           }`}
         >
-          {tab}
+          {tab.icon}
+          {tab.name}
         </button>
       ))}
     </nav>
@@ -43,35 +49,62 @@ const SettingsPage: React.FC = () => {
   const isAdmin = currentMembership?.role?.role_name === "admin";
   const isOwner = currentMembership?.business.owner_user_id === profile?.id;
 
-  // Tabs available to user
-  const tabs = ["Profile"];
-  if (isAdmin || isOwner) {
-    tabs.push("Business", "Users", "Roles", "Businesses");
-  }
+  // Define all possible tabs
+  const allTabs: TabItem[] = [
+    { name: "Profile", icon: <User className="w-4 h-4" /> },
+    {
+      name: "Business",
+      icon: <Building2 className="w-4 h-4" />,
+      adminOnly: true,
+    },
+    { name: "Users", icon: <Users className="w-4 h-4" />, adminOnly: true },
+    { name: "Roles", icon: <Shield className="w-4 h-4" />, adminOnly: true },
+    {
+      name: "Businesses",
+      icon: <Store className="w-4 h-4" />,
+      adminOnly: true,
+    },
+  ];
+
+  // Filter tabs based on permissions
+  const visibleTabs = allTabs.filter((tab) => {
+    if (tab.name === "Profile") return true;
+    return isAdmin || isOwner;
+  });
 
   return (
-    <div className="mx-auto h-full flex flex-col">
-      {/* Sticky Tabs */}
-      <div className="sticky top-0 z-10 bg-gray-50 pt-4 -mt-4">
-        <Tabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+    <div className="h-full flex flex-col">
+      {/* Sticky Header */}
+      <div className="flex-shrink-0 space-y-md pb-md">
+        <div className="space-y-xs">
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-sm">
+            <Settings className="w-6 h-6 text-primary-600" />
+            Settings
+          </h2>
+          <p className="text-sm text-gray-500">
+            Manage your account, business preferences, and team access
+          </p>
+        </div>
+        <Tabs tabs={visibleTabs} active={activeTab} onChange={setActiveTab} />
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto mt-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          {activeTab === 0 && (
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-lg">
+          {visibleTabs[activeTab]?.name === "Profile" && (
             <ProfileSettings profile={profile} onUpdate={refreshProfile} />
           )}
-          {activeTab === 1 && isAdmin && (
+          {visibleTabs[activeTab]?.name === "Business" && isAdmin && (
             <BusinessSettings businessId={currentBusinessId!} />
           )}
-          {activeTab === 2 && isAdmin && (
+          {visibleTabs[activeTab]?.name === "Users" && isAdmin && (
             <UserManagement businessId={currentBusinessId!} />
           )}
-          {activeTab === 3 && isAdmin && (
+          {visibleTabs[activeTab]?.name === "Roles" && isAdmin && (
             <RoleManagement businessId={currentBusinessId!} />
           )}
-          {activeTab === 4 && (isAdmin || isOwner) && <BusinessesOverview />}
+          {visibleTabs[activeTab]?.name === "Businesses" &&
+            (isAdmin || isOwner) && <BusinessesOverview />}
         </div>
       </div>
     </div>

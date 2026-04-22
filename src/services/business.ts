@@ -90,6 +90,7 @@ export const businessService = {
     legal_name?: string;
     timezone?: string;
     currency_code?: string;
+    business_category?: string;
   }): Promise<OrgBusiness> {
     const slug = params.business_name
       .toLowerCase()
@@ -106,6 +107,7 @@ export const businessService = {
         timezone: params.timezone || "UTC",
         currency_code: params.currency_code || "USD",
         status: "active",
+        business_category: params.business_category || null,
       })
       .select("*")
       .single();

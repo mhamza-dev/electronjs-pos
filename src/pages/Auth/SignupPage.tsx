@@ -1,11 +1,12 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Form } from "../../components/Form";
-import { TextInput } from "../../components/Inputs";
+import { TextInput, SelectInput } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
 import { businessService, rbacService, authService } from "../../services";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAPI } from "../../hooks/useAPI";
+import { businessCategoryOptions } from "../../data/constants";
 import logo from "../../assets/logo.svg";
 
 const SignupPage: React.FC = () => {
@@ -39,13 +40,13 @@ const SignupPage: React.FC = () => {
     const newBusiness = await createBusiness({
       owner_user_id: userId,
       business_name: values.businessName,
-      legal_name: values.businessName, // or separate field if desired
+      legal_name: values.businessName,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       currency_code: "USD",
+      business_category: values.business_category, // 👈 pass category
     });
 
     // 3. Assign the 'admin' role to the owner
-    // First, find the admin role for the new business
     const roles = await rbacService.getRoles(newBusiness.id);
     const adminRole = roles.find((r) => r.role_name === "admin");
     if (adminRole) {
@@ -53,7 +54,7 @@ const SignupPage: React.FC = () => {
         newBusiness.id,
         userId,
         adminRole.id,
-        userId, // assigned by self
+        userId,
       );
     }
 
@@ -96,6 +97,7 @@ const SignupPage: React.FC = () => {
             email: "",
             password: "",
             businessName: "",
+            business_category: "Other", // default
           }}
           onSubmit={handleSignup}
           className="space-y-md"
@@ -125,6 +127,13 @@ const SignupPage: React.FC = () => {
             name="businessName"
             label="Business Name"
             placeholder="My Awesome Shop"
+            required
+          />
+
+          <SelectInput
+            name="business_category"
+            label="Business Type"
+            options={businessCategoryOptions}
             required
           />
 

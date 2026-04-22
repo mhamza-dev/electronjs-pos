@@ -62,7 +62,7 @@ const CreatePOModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl width-container-md max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-xl shadow-xl w-7xl max-h-[80vh] overflow-hidden flex flex-col">
         <div className="p-6 border-b">
           <h3 className="text-xl font-bold">Create Purchase Order</h3>
         </div>

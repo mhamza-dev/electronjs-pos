@@ -1,9 +1,18 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { HiHome, HiCube, HiCog, HiTruck } from "react-icons/hi";
+import {
+  LayoutDashboard,
+  Package,
+  Truck,
+  Settings,
+  LogOut,
+  ChevronDown,
+  Store,
+} from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { authService } from "../../services";
 import logo from "../../assets/logo.svg";
+import Dropdown from "../Dropdown";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -17,16 +26,12 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
   const path = location.pathname;
   const { profile, refreshProfile, signOut } = useAuth();
 
-  // Find current business from profile using current_business_id
+  // Current business context
   const currentBusinessMembership = profile?.business_users.find(
     (bu) => bu.business_id === profile.current_business_id,
   );
 
-  const currentBusinessName =
-    currentBusinessMembership?.business.business_name || "Vendora PRO";
   const currentRole = currentBusinessMembership?.role?.role_name || "Staff";
-
-  // Available businesses for switching
   const availableBusinesses = profile?.business_users || [];
 
   const handleLogout = async () => {
@@ -39,7 +44,6 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
     try {
       await authService.switchBusiness(profile.id, businessId);
       await refreshProfile();
-      // Optionally reload page or just let state update
     } catch (error) {
       console.error("Failed to switch business:", error);
       alert("Could not switch business.");
@@ -51,25 +55,25 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
       name: "Dashboard",
       path: "/dashboard",
       adminOnly: false,
-      icon: <HiHome className="w-5 h-5" />,
+      icon: LayoutDashboard,
     },
     {
       name: "Products",
       path: "/products",
       adminOnly: false,
-      icon: <HiCube className="w-5 h-5" />,
+      icon: Package,
     },
     {
       name: "Procurement",
       path: "/procurement",
       adminOnly: true,
-      icon: <HiTruck className="w-5 h-5" />,
+      icon: Truck,
     },
     {
       name: "Settings",
       path: "/settings",
       adminOnly: false,
-      icon: <HiCog className="w-5 h-5" />,
+      icon: Settings,
     },
   ];
 
@@ -77,116 +81,114 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
     (item) => !item.adminOnly || currentRole === "admin",
   );
 
+  const activePageTitle =
+    menuItems.find((item) => item.path === path)?.name || "Dashboard";
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden font-poppins">
       {/* Sidebar */}
-      <aside className="w-width-sidebar flex-shrink-0 bg-white border-r border-gray-200 flex flex-col shadow-sm">
-        <div className="h-height-header flex items-center px-lg border-b border-gray-200">
-          <img src={logo} alt="logoWithName" className="w-10 h-10 mr-sm" />
-          <span className="text-xl font-black text-gray-800 tracking-tight truncate max-w-[180px]">
-            {currentBusinessName === "Vendora PRO" ? (
-              <>
-                Vendora<span className="text-primary">PRO</span>
-              </>
-            ) : (
-              currentBusinessName
-            )}
+      <aside className="w-width-sidebar flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+        {/* Logo Area */}
+        <div className="h-height-header flex items-center px-lg border-b border-gray-100">
+          <img src={logo} alt="Vendora" className="w-8 h-8 mr-sm" />
+          <span className="text-xl font-black text-gray-800 tracking-tight truncate">
+            Vendora<span className="text-primary">PRO</span>
           </span>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-md space-y-sm mt-md">
-          {filteredMenuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`p-sm rounded-xl font-bold flex items-center space-x-md transition-all ${
-                location.pathname === item.path
-                  ? "bg-primary text-white"
-                  : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-              }`}
-            >
-              <div
-                className={
-                  location.pathname === item.path
-                    ? "text-white"
-                    : "text-gray-400"
-                }
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto p-md space-y-xs">
+          {filteredMenuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`group flex items-center px-md py-sm rounded-lg font-medium transition-all ${
+                  isActive
+                    ? "bg-primary-50 text-primary-700"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
               >
-                {item.icon}
-              </div>
-              <span>{item.name}</span>
-            </Link>
-          ))}
+                <Icon
+                  className={`w-5 h-5 mr-md transition-colors ${
+                    isActive
+                      ? "text-primary-700"
+                      : "text-gray-400 group-hover:text-gray-600"
+                  }`}
+                />
+                <span>{item.name}</span>
+                {isActive && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="p-md border-t border-gray-200">
+        {/* Footer / Logout */}
+        <div className="p-md border-t border-gray-100">
           <button
             onClick={handleLogout}
-            className="w-full p-sm text-red-500 hover:bg-red-50 rounded-xl font-bold transition-all flex items-center space-x-md"
+            className="w-full flex items-center px-md py-sm text-red-500 hover:bg-red-50 rounded-lg font-medium transition-colors"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
+            <LogOut className="w-5 h-5 mr-md" />
             <span>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="h-height-header bg-white border-b border-gray-200 flex items-center justify-between px-lg flex-shrink-0">
-          <h1 className="text-xl font-bold">
-            {menuItems.find((item) => item.path === path)?.name ||
-              "Vendora PRO"}
+        <header className="h-height-header bg-white border-b border-gray-100 flex items-center justify-between px-lg flex-shrink-0">
+          <h1 className="text-xl font-semibold text-gray-800">
+            {activePageTitle}
           </h1>
+
           <div className="flex items-center space-x-md">
-            {/* Business Switcher Dropdown */}
-            {availableBusinesses.length > 1 && (
-              <div className="relative">
-                <select
-                  value={profile?.current_business_id || ""}
-                  onChange={(e) => handleSwitchBusiness(e.target.value)}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  {availableBusinesses.map((b) => (
-                    <option key={b.business_id} value={b.business_id}>
-                      {b.business.business_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div className="text-right hidden sm:block">
-              <div className="text-sm font-bold text-gray-800 leading-none">
+            {/* Business Switcher */}
+            <Dropdown
+              options={availableBusinesses.map((b) => ({
+                label: b.business.business_name,
+                value: b.business_id,
+              }))}
+              value={profile?.current_business_id || ""}
+              onChange={handleSwitchBusiness}
+              renderTrigger={(selected) => (
+                <div className="flex items-center gap-xs px-sm py-xs hover:bg-gray-50 rounded-lg transition-colors">
+                  <Store className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700 max-w-[120px] truncate">
+                    {selected?.label || "Select Business"}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </div>
+              )}
+            />
+            {/* User Info */}
+            <div className="hidden sm:block text-right">
+              <div className="text-sm font-semibold text-gray-800">
                 {profile?.full_name || "User"}
               </div>
-              <div className="text-xs text-gray-400 capitalize">
+              <div className="text-xs text-gray-500 capitalize">
                 {currentRole}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary font-bold shadow-sm">
+
+            {/* Avatar */}
+            <div className="w-9 h-9 rounded-full bg-primary-50 text-primary-700 font-semibold flex items-center justify-center shadow-sm border-2 border-white">
               {profile?.full_name?.charAt(0) || "U"}
             </div>
           </div>
         </header>
 
-        {/* Content */}
+        {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-lg">{children}</main>
 
         {/* Footer */}
-        <footer className="h-height-footer bg-white border-t border-gray-200 flex items-center px-lg text-sm text-gray-400 flex-shrink-0">
-          &copy; 2026 Vendora PRO v1.0.0
+        <footer className="h-height-footer bg-white border-t border-gray-100 flex items-center px-lg text-xs text-gray-400 flex-shrink-0">
+          &copy; {new Date().getFullYear()} Vendora PRO. All rights reserved.
         </footer>
       </div>
     </div>

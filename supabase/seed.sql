@@ -110,7 +110,7 @@ BEGIN
         owner_user_id := owner_ids[1 + ((i-1) % array_length(owner_ids, 1))];
         IF NOT EXISTS (SELECT 1 FROM org_businesses WHERE business_name = business_names[i]) THEN
             INSERT INTO org_businesses (
-                owner_user_id, business_name, legal_name, slug, timezone, currency_code, status
+                owner_user_id, business_name, legal_name, slug, timezone, currency_code, status, business_category
             ) VALUES (
                 owner_user_id,
                 business_names[i],
@@ -118,13 +118,12 @@ BEGIN
                 lower(regexp_replace(business_names[i], ' ', '-', 'g')),
                 'America/New_York',
                 'USD',
-                'active'
+                'active',
+                categories[i]
             )
             RETURNING id INTO v_business_id;
 
-            INSERT INTO sys_settings (business_id, setting_key, setting_value)
-            VALUES (v_business_id, 'business_category', to_jsonb(categories[i]))
-            ON CONFLICT (business_id, setting_key) DO NOTHING;
+            -- No longer need to store business_category in sys_settings
         END IF;
     END LOOP;
 END $$;

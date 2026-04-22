@@ -1,6 +1,6 @@
 // services/employeeService.ts
 import { supabase } from "../lib/supabase";
-import { Employee } from "../data/type";
+import { Employee, OrgEmployee } from "../data/type";
 
 export const employeeService = {
   /**
@@ -158,5 +158,53 @@ export const employeeService = {
   async deleteUserAccount(userId: string): Promise<void> {
     const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) throw error;
+  },
+
+  // services/employeeService.ts
+  async createEmployee(employee: {
+    business_id: string;
+    department_id?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    job_title?: string | null;
+    employment_status?: string;
+    hired_at?: string;
+  }): Promise<OrgEmployee> {
+    const employee_code =
+      "EMP" + Math.random().toString(36).substr(2, 6).toUpperCase();
+    const { data, error } = await supabase
+      .from("org_employees")
+      .insert({
+        ...employee,
+        employee_code,
+        employment_status: employee.employment_status || "active",
+        hired_at: employee.hired_at || new Date().toISOString().split("T")[0],
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data;
+  },
+  // services/employeeService.ts
+  async getEmployeeByUserId(
+    businessId: string,
+    userId: string,
+  ): Promise<OrgEmployee | null> {
+    // We assume org_employees.email matches auth.users.email, or we can join via a user_id field if added.
+    // For now, we'll use email matching.
+    const { data: user } = await supabase.auth.admin.getUserById(userId);
+    const email = user.user?.email;
+    if (!email) return null;
+
+    const { data, error } = await supabase
+      .from("org_employees")
+      .select("*")
+      .eq("business_id", businessId)
+      .eq("email", email)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
   },
 };

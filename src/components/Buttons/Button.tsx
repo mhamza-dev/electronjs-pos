@@ -2,10 +2,12 @@ import React from "react";
 import { useFormikContext } from "formik";
 
 type ButtonVariant = "primary" | "secondary" | "inverted" | "danger" | "ghost";
+type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
   inForm?: boolean; // set to true when button is inside a Formik form
 }
@@ -13,19 +15,21 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const Button: React.FC<ButtonProps> = ({
   children,
   variant = "primary",
+  size = "md",
   loading = false,
   inForm = false,
   className = "",
+  disabled,
   ...props
 }) => {
-  // Only access Formik context if the button is meant to be used inside a Formik form
   const formikContext = inForm ? useFormikContext() : null;
   const handleSubmit = formikContext?.handleSubmit;
 
+  // Base styles (no padding/font-size here; handled by size classes)
   const baseStyles =
-    "px-3 py-2 rounded-md font-bold transition-all duration-200 flex items-center justify-center space-x-sm disabled:opacity-50 disabled:cursor-not-allowed";
+    "rounded-md font-bold transition-all duration-200 flex items-center justify-center space-x-sm disabled:opacity-50 disabled:cursor-not-allowed";
 
-  const variants = {
+  const variants: Record<ButtonVariant, string> = {
     primary: "bg-primary text-white hover:bg-primary-700",
     secondary: "bg-secondary text-white hover:bg-secondary-700",
     inverted:
@@ -34,26 +38,48 @@ const Button: React.FC<ButtonProps> = ({
     ghost: "bg-transparent text-gray-500 hover:bg-gray-100",
   };
 
+  const sizes: Record<ButtonSize, string> = {
+    xs: "px-xs py-xs text-xs",
+    sm: "px-sm py-sm text-sm",
+    md: "px-md py-sm text-base", // default
+    lg: "px-lg py-md text-lg",
+    xl: "px-xl py-md text-xl",
+    "2xl": "px-2xl py-lg text-2xl",
+    "3xl": "px-3xl py-xl text-3xl",
+  };
+
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Only prevent default and call Formik's handleSubmit if inForm and type="submit"
     if (props.type === "submit" && inForm && handleSubmit) {
       e.preventDefault();
       handleSubmit();
     }
-    // Always call the original onClick if provided
     if (props.onClick) {
       props.onClick(e);
     }
   };
 
+  // Determine spinner size based on button size
+  const spinnerSizeClass = {
+    xs: "w-3 h-3",
+    sm: "w-3 h-3",
+    md: "w-4 h-4",
+    lg: "w-4 h-4",
+    xl: "w-5 h-5",
+    "2xl": "w-6 h-6",
+    "3xl": "w-6 h-6",
+  }[size];
+
   return (
     <button
       {...props}
       onClick={handleClick}
-      className={`${baseStyles} ${variants[variant]} ${className}`}
+      disabled={disabled || loading}
+      className={`${baseStyles} ${sizes[size]} ${variants[variant]} ${className}`}
     >
       {loading ? (
-        <div className="animate-spin inline-block h-4 w-4 mr-2"></div>
+        <div
+          className={`animate-spin inline-block ${spinnerSizeClass} border-2 border-white border-t-transparent rounded-full mr-1`}
+        />
       ) : (
         children
       )}

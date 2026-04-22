@@ -31,7 +31,7 @@ let win: BrowserWindow | null;
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
-    alwaysOnTop: true,
+    // alwaysOnTop: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
     },
@@ -42,7 +42,7 @@ function createWindow() {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
   });
 
-  win.webContents.openDevTools({ mode: "right" });
+  // win.webContents.openDevTools({ mode: "right" });
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);

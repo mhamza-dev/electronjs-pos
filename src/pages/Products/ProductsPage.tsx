@@ -5,6 +5,19 @@ import { useAPI } from "../../hooks/useAPI";
 import { CatalogProduct, CatalogProductInsert } from "../../data/type";
 import { Button } from "../../components/Buttons";
 import ProductForm from "../../components/Modals/ProductForm";
+import { uploadService } from "../../services/upload";
+import { Form } from "../../components/Form";
+import { TextInput } from "../../components/Inputs";
+import {
+  Package,
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Image as ImageIcon,
+} from "lucide-react";
 
 const ProductsPage: React.FC = () => {
   const { profile } = useAuth();
@@ -12,6 +25,7 @@ const ProductsPage: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<CatalogProduct | null>(
     null,
   );
+  const [searchQuery, setSearchQuery] = useState("");
 
   const {
     data: products,
@@ -19,13 +33,8 @@ const ProductsPage: React.FC = () => {
     request: fetchProducts,
   } = useAPI(catalogService.getProducts);
 
-  const { loading: _deleteLoading, request: deleteProduct } = useAPI(
-    catalogService.deleteProduct,
-  );
-
-  const { loading: _toggleLoading, request: updateProduct } = useAPI(
-    catalogService.updateProduct,
-  );
+  const { request: deleteProduct } = useAPI(catalogService.deleteProduct);
+  const { request: updateProduct } = useAPI(catalogService.updateProduct);
 
   useEffect(() => {
     if (profile?.current_business_id) {
@@ -73,6 +82,32 @@ const ProductsPage: React.FC = () => {
 
   const handleSubmit = async (values: CatalogProductInsert) => {
     try {
+      let imageUrl: string | null = null;
+
+      if (values.image_url instanceof File) {
+        const uploadResult = await uploadService.uploadProductImage(
+          values.image_url,
+          profile!.current_business_id!,
+          profile!.id,
+        );
+        imageUrl = uploadResult.publicUrl;
+
+        if (editingProduct?.image_url) {
+          const oldPath = uploadService.extractPathFromUrl(
+            editingProduct.image_url,
+          );
+          if (oldPath) {
+            await uploadService.deleteFile(oldPath).catch((err) => {
+              console.warn("Failed to delete old image:", err);
+            });
+          }
+        }
+      } else if (typeof values.image_url === "string") {
+        imageUrl = values.image_url;
+      } else {
+        imageUrl = null;
+      }
+
       const productData = {
         product_name: values.product_name,
         sku: values.sku ?? null,
@@ -82,7 +117,7 @@ const ProductsPage: React.FC = () => {
         default_price: values.default_price ?? null,
         cost_price: values.cost_price ?? null,
         is_active: values.is_active ?? true,
-        image_url: values.image_url ?? null,
+        image_url: imageUrl,
       };
 
       if (editingProduct) {
@@ -94,6 +129,7 @@ const ProductsPage: React.FC = () => {
           values.category_ids,
         );
       }
+
       if (profile?.current_business_id) {
         await fetchProducts(profile.current_business_id);
       }
@@ -104,153 +140,216 @@ const ProductsPage: React.FC = () => {
     }
   };
 
+  const filteredProducts = (products || []).filter(
+    (p: CatalogProduct) =>
+      p.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.sku?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (p.description?.toLowerCase() || "").includes(searchQuery.toLowerCase()),
+  );
+
   return (
-    <div className="flex flex-col space-y-lg">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">
-          Inventory Management
-        </h2>
-        <Button variant="primary" onClick={() => handleOpenModal()}>
-          Add New Product
-        </Button>
+    <div className="h-full flex flex-col">
+      {/* Sticky Header Section */}
+      <div className="flex-shrink-0 space-y-lg pb-lg">
+        {/* Title and Add Button */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-md">
+          <div className="space-y-xs">
+            <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-sm">
+              <Package className="w-6 h-6 text-primary-600" />
+              Products
+            </h2>
+            <p className="text-sm text-gray-500">
+              Manage your inventory, pricing, and product details
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => handleOpenModal()}
+            className="shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-xs" />
+            Add Product
+          </Button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="flex items-center gap-md">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Form
+              initialValues={{ searchQuery: "" }}
+              onSubmit={(values) => setSearchQuery(values.searchQuery)}
+              validateOnChange
+            >
+              <TextInput
+                name="searchQuery"
+                type="text"
+                placeholder="Search by name, SKU, or description..."
+                className="pl-9"
+              />
+            </Form>
+          </div>
+          <span className="text-sm text-gray-500">
+            {filteredProducts.length} item
+            {filteredProducts.length !== 1 ? "s" : ""}
+          </span>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center py-2xl">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg pb-lg">
-          {(products || []).map((product: CatalogProduct) => (
-            <div
-              key={product.id}
-              className={`bg-white border rounded-xl shadow-sm p-lg hover:shadow-md transition-shadow group flex flex-col justify-between ${
-                !product.is_active
-                  ? "opacity-60 border-gray-200"
-                  : "border-gray-100"
-              }`}
-            >
-              <div>
-                <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden mb-lg">
+      {/* Scrollable Products Grid */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {loading && !products ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white border border-gray-200 rounded-xl p-lg animate-pulse"
+              >
+                <div className="aspect-square bg-gray-200 rounded-lg mb-lg" />
+                <div className="h-5 bg-gray-200 rounded w-3/4 mb-sm" />
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-md" />
+                <div className="flex justify-between">
+                  <div className="h-6 bg-gray-200 rounded w-20" />
+                  <div className="h-8 bg-gray-200 rounded w-24" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg pb-lg">
+            {filteredProducts.map((product: CatalogProduct) => (
+              <div
+                key={product.id}
+                className={`group relative bg-white border rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden ${
+                  !product.is_active
+                    ? "opacity-60 border-gray-200"
+                    : "border-gray-200"
+                }`}
+              >
+                {/* Status Badge */}
+                <div className="absolute top-3 left-3 z-10">
+                  <span
+                    className={`inline-flex items-center px-sm py-0.5 rounded-full text-xs font-medium ${
+                      product.is_active
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {product.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+
+                {/* Image */}
+                <div
+                  className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden cursor-pointer"
+                  onClick={() => handleOpenModal(product)}
+                >
                   {product.image_url ? (
                     <img
                       src={product.image_url}
                       alt={product.product_name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <span className="text-4xl font-bold text-gray-300">
-                      {product.product_name.charAt(0)}
-                    </span>
+                    <div className="flex flex-col items-center justify-center text-gray-300">
+                      <ImageIcon className="w-12 h-12 mb-sm" />
+                      <span className="text-sm font-medium">No image</span>
+                    </div>
                   )}
                 </div>
-                <div className="flex flex-col space-y-xs">
-                  <span className="text-lg font-bold text-gray-800 truncate">
+
+                {/* Content */}
+                <div className="p-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 truncate">
                     {product.product_name}
-                  </span>
-                  <span className="text-sm text-gray-400">
-                    SKU: {product.sku || "—"} • {product.uom || "ea"}
-                  </span>
+                  </h3>
+                  <div className="flex items-center gap-xs mt-xs text-sm text-gray-500">
+                    <span>SKU: {product.sku || "—"}</span>
+                    <span>•</span>
+                    <span>{product.uom || "ea"}</span>
+                  </div>
                   {product.description && (
-                    <p className="text-xs text-gray-500 line-clamp-2">
+                    <p className="text-sm text-gray-500 mt-sm line-clamp-2">
                       {product.description}
                     </p>
                   )}
+
+                  {/* Price and Actions */}
+                  <div className="flex items-center justify-between mt-lg">
+                    <div>
+                      <span className="text-xl font-bold text-gray-900">
+                        ${(product.default_price || 0).toFixed(2)}
+                      </span>
+                      {product.cost_price && (
+                        <span className="text-xs text-gray-400 block">
+                          Cost: ${product.cost_price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-xs">
+                      <button
+                        onClick={() => handleToggleStatus(product)}
+                        className="p-sm text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        title={product.is_active ? "Deactivate" : "Activate"}
+                      >
+                        {product.is_active ? (
+                          <ToggleRight className="w-5 h-5" />
+                        ) : (
+                          <ToggleLeft className="w-5 h-5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleOpenModal(product)}
+                        className="p-sm text-gray-500 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="p-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-xl">
-                <div className="flex flex-col">
-                  <span className="text-xl font-black text-primary">
-                    ${(product.default_price || 0).toFixed(2)}
-                  </span>
-                  {product.cost_price && (
-                    <span className="text-xs text-gray-400">
-                      Cost: ${product.cost_price.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-                <div className="flex space-x-sm">
-                  <button
-                    onClick={() => handleToggleStatus(product)}
-                    className="p-sm bg-gray-50 hover:bg-yellow-50 hover:text-yellow-600 rounded-lg transition-colors text-gray-400"
-                    title={product.is_active ? "Deactivate" : "Activate"}
-                  >
-                    {product.is_active ? (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handleOpenModal(product)}
-                    className="p-sm bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-gray-400"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    className="p-sm bg-gray-50 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors text-gray-400"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v2m3 4H5"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl py-3xl px-lg text-center">
+            <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-lg">
+              <Package className="w-8 h-8 text-gray-400" />
             </div>
-          ))}
-        </div>
-      )}
+            <h3 className="text-lg font-semibold text-gray-900 mb-xs">
+              No products found
+            </h3>
+            <p className="text-gray-500 mb-lg">
+              {searchQuery
+                ? "Try adjusting your search terms"
+                : "Get started by adding your first product"}
+            </p>
+            {!searchQuery && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleOpenModal()}
+              >
+                <Plus className="w-4 h-4 mr-xs" />
+                Add Product
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Product Form Modal */}
       {showModal && (
         <ProductForm
           isVisible={showModal}
-          profile={profile}
           onClose={handleCloseModal}
           onSubmit={handleSubmit}
           item={editingProduct}

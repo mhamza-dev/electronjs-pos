@@ -45,6 +45,7 @@ export interface OrgBusiness {
   timezone: string;
   currency_code: string;
   status: BusinessStatus;
+  business_category?: string;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -162,7 +163,8 @@ export interface CatalogProductInsert {
   default_price?: number | null;
   cost_price?: number | null;
   is_active?: boolean;
-  image_url?: string | null;
+  image_url?: File | string | null;
+  track_inventory?: boolean;
   category_ids?: string[];
 }
 
@@ -367,4 +369,10 @@ export interface EmployeeDetailsView {
   user_full_name: string | null;
   department_name: string | null;
   primary_role: string | null;
+}
+
+export interface UOMOption {
+  label: string;
+  value: string;
+  categories: string[]; // business categories where this UOM is common; use ["all"] for universal
 }
