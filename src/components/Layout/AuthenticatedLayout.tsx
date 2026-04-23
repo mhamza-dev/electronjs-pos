@@ -10,8 +10,6 @@ import {
   Store,
   Sun,
   Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { authService } from "../../services";
