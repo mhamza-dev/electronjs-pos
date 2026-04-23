@@ -154,11 +154,11 @@ const ProductsPage: React.FC = () => {
         {/* Title and Add Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-md">
           <div className="space-y-xs">
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-sm">
-              <Package className="w-6 h-6 text-primary-600" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight flex items-center gap-sm">
+              <Package className="w-6 h-6 text-primary-600 dark:text-primary-400" />
               Products
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Manage your inventory, pricing, and product details
             </p>
           </div>
@@ -176,7 +176,7 @@ const ProductsPage: React.FC = () => {
         {/* Search Bar */}
         <div className="flex items-center gap-md">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
             <Form
               initialValues={{ searchQuery: "" }}
               onSubmit={(values) => setSearchQuery(values.searchQuery)}
@@ -190,7 +190,7 @@ const ProductsPage: React.FC = () => {
               />
             </Form>
           </div>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {filteredProducts.length} item
             {filteredProducts.length !== 1 ? "s" : ""}
           </span>
@@ -204,14 +204,14 @@ const ProductsPage: React.FC = () => {
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white border border-gray-200 rounded-xl p-lg animate-pulse"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-lg animate-pulse"
               >
-                <div className="aspect-square bg-gray-200 rounded-lg mb-lg" />
-                <div className="h-5 bg-gray-200 rounded w-3/4 mb-sm" />
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-md" />
+                <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg mb-lg" />
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-sm" />
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-md" />
                 <div className="flex justify-between">
-                  <div className="h-6 bg-gray-200 rounded w-20" />
-                  <div className="h-8 bg-gray-200 rounded w-24" />
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24" />
                 </div>
               </div>
             ))}
@@ -221,10 +221,10 @@ const ProductsPage: React.FC = () => {
             {filteredProducts.map((product: CatalogProduct) => (
               <div
                 key={product.id}
-                className={`group relative bg-white border rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden ${
+                className={`group relative bg-white dark:bg-gray-800 border rounded-xl shadow-sm hover:shadow-md dark:hover:shadow-gray-900/50 transition-all overflow-hidden ${
                   !product.is_active
-                    ? "opacity-60 border-gray-200"
-                    : "border-gray-200"
+                    ? "opacity-60 border-gray-200 dark:border-gray-700"
+                    : "border-gray-200 dark:border-gray-700"
                 }`}
               >
                 {/* Status Badge */}
@@ -232,8 +232,8 @@ const ProductsPage: React.FC = () => {
                   <span
                     className={`inline-flex items-center px-sm py-0.5 rounded-full text-xs font-medium ${
                       product.is_active
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-600"
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                     }`}
                   >
                     {product.is_active ? "Active" : "Inactive"}
@@ -242,7 +242,7 @@ const ProductsPage: React.FC = () => {
 
                 {/* Image */}
                 <div
-                  className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden cursor-pointer"
+                  className="aspect-square bg-gray-50 dark:bg-gray-700 flex items-center justify-center overflow-hidden cursor-pointer"
                   onClick={() => handleOpenModal(product)}
                 >
                   {product.image_url ? (
@@ -252,7 +252,7 @@ const ProductsPage: React.FC = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-gray-300">
+                    <div className="flex flex-col items-center justify-center text-gray-300 dark:text-gray-500">
                       <ImageIcon className="w-12 h-12 mb-sm" />
                       <span className="text-sm font-medium">No image</span>
                     </div>
@@ -261,16 +261,16 @@ const ProductsPage: React.FC = () => {
 
                 {/* Content */}
                 <div className="p-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
                     {product.product_name}
                   </h3>
-                  <div className="flex items-center gap-xs mt-xs text-sm text-gray-500">
+                  <div className="flex items-center gap-xs mt-xs text-sm text-gray-500 dark:text-gray-400">
                     <span>SKU: {product.sku || "—"}</span>
                     <span>•</span>
                     <span>{product.uom || "ea"}</span>
                   </div>
                   {product.description && (
-                    <p className="text-sm text-gray-500 mt-sm line-clamp-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-sm line-clamp-2">
                       {product.description}
                     </p>
                   )}
@@ -278,11 +278,11 @@ const ProductsPage: React.FC = () => {
                   {/* Price and Actions */}
                   <div className="flex items-center justify-between mt-lg">
                     <div>
-                      <span className="text-xl font-bold text-gray-900">
+                      <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
                         ${(product.default_price || 0).toFixed(2)}
                       </span>
                       {product.cost_price && (
-                        <span className="text-xs text-gray-400 block">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 block">
                           Cost: ${product.cost_price.toFixed(2)}
                         </span>
                       )}
@@ -290,7 +290,7 @@ const ProductsPage: React.FC = () => {
                     <div className="flex items-center gap-xs">
                       <button
                         onClick={() => handleToggleStatus(product)}
-                        className="p-sm text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        className="p-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-400/20 rounded-lg transition-colors"
                         title={product.is_active ? "Deactivate" : "Activate"}
                       >
                         {product.is_active ? (
@@ -301,14 +301,14 @@ const ProductsPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleOpenModal(product)}
-                        className="p-sm text-gray-500 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors"
+                        className="p-sm text-gray-500 dark:text-gray-400 hover:text-secondary-600 dark:hover:text-secondary-400 hover:bg-secondary-50 dark:hover:bg-secondary-900/20 rounded-lg transition-colors"
                         title="Edit"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => handleDelete(product.id)}
-                        className="p-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -320,14 +320,14 @@ const ProductsPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl py-3xl px-lg text-center">
-            <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-lg">
-              <Package className="w-8 h-8 text-gray-400" />
+          <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-3xl px-lg text-center">
+            <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-lg">
+              <Package className="w-8 h-8 text-gray-400 dark:text-gray-500" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-xs">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-xs">
               No products found
             </h3>
-            <p className="text-gray-500 mb-lg">
+            <p className="text-gray-500 dark:text-gray-400 mb-lg">
               {searchQuery
                 ? "Try adjusting your search terms"
                 : "Get started by adding your first product"}

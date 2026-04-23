@@ -96,14 +96,19 @@ export const posService = {
         quantity: number;
         unit_price: number;
         discount_amount?: number;
-        tax_amount?: number;
+        tax_amount?: number; // item-level tax
       }>;
       payment_status?: string;
+      payment_method?: string;
+      amount_tendered?: number;
+      change_due?: number;
+      discount_amount?: number; // order-level discount
+      total_amount?: number; // final total after discount
     },
   ): Promise<PosSalesOrder> {
     const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // Calculate totals
+    // Calculate subtotal and tax from items
     let subtotal = 0;
     let tax = 0;
     order.items.forEach((item) => {
@@ -114,6 +119,10 @@ export const posService = {
       tax += lineTax;
     });
 
+    const totalBeforeDiscount = subtotal + tax;
+    const finalTotal =
+      order.total_amount ?? totalBeforeDiscount - (order.discount_amount || 0);
+
     const { data: orderData, error: orderError } = await supabase
       .from("pos_sales_orders")
       .insert({
@@ -123,12 +132,17 @@ export const posService = {
         order_number: orderNumber,
         status: "completed",
         payment_status: order.payment_status || "paid",
+        payment_method: order.payment_method || "cash",
+        amount_tendered: order.amount_tendered,
+        change_due: order.change_due,
         subtotal_amount: subtotal,
+        discount_amount: order.discount_amount || 0,
         tax_amount: tax,
-        total_amount: subtotal + tax,
+        total_amount: finalTotal,
       })
       .select("*")
       .single();
+
     if (orderError) throw orderError;
 
     // Insert items

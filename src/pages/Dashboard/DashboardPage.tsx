@@ -6,6 +6,7 @@ import { useAPI } from "../../hooks/useAPI";
 import { Form } from "../../components/Form";
 import { TextInput } from "../../components/Inputs";
 import Cart from "../../components/Cart";
+import CashPaymentModal from "../../components/Modals/CashPaymentModal";
 import {
   Search,
   Plus,
@@ -18,6 +19,11 @@ const DashboardPage: React.FC = () => {
   const { profile } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCashModal, setShowCashModal] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<{
+    discount: number;
+    totalAfterDiscount: number;
+  } | null>(null);
 
   const { data: products, request: fetchProducts } = useAPI(
     catalogService.getProducts,
@@ -59,21 +65,23 @@ const DashboardPage: React.FC = () => {
     );
   };
 
-  const subtotal = cart.reduce(
-    (acc, item) => acc + (item.default_price || 0) * item.quantity,
-    0,
-  );
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
-
-  const handleCheckout = async (orderDetails?: {
+  // Called when Cart's checkout button is clicked (after discount applied)
+  const handleCheckout = async (orderDetails: {
     discount: number;
     totalAfterDiscount: number;
   }) => {
     if (cart.length === 0 || !profile?.current_business_id) return;
+    // Store the order details and show cash modal
+    setPendingOrder(orderDetails);
+    setShowCashModal(true);
+  };
 
-    const finalTotal = orderDetails?.totalAfterDiscount ?? total;
-    const discount = orderDetails?.discount ?? 0;
+  // Called when cashier confirms cash payment
+  const handleCashPayment = async (amountTendered: number) => {
+    if (!pendingOrder || !profile?.current_business_id) return;
+
+    const { discount, totalAfterDiscount } = pendingOrder;
+    const changeDue = amountTendered - totalAfterDiscount;
 
     try {
       const orderItems = cart.map((item) => ({
@@ -82,7 +90,6 @@ const DashboardPage: React.FC = () => {
         unit_price: item.default_price || 0,
       }));
 
-      // Determine if user is an employee (non-admin) in current business
       const currentMembership = profile.business_users.find(
         (bu) => bu.business_id === profile.current_business_id,
       );
@@ -93,7 +100,6 @@ const DashboardPage: React.FC = () => {
       let cashierEmployeeId: string | undefined = undefined;
 
       if (!isAdminOrOwner) {
-        // Fetch employee record for current user
         const employee = await employeeService.getEmployeeByUserId(
           profile.current_business_id,
           profile.id,
@@ -101,26 +107,38 @@ const DashboardPage: React.FC = () => {
         cashierEmployeeId = employee?.id;
       }
 
-      const orderData = {
+      await createOrder(profile.current_business_id, {
         items: orderItems,
         payment_status: "paid",
+        payment_method: "cash",
         discount_amount: discount,
-        total_amount: finalTotal,
-        cashier_employee_id: cashierEmployeeId, // add cashier if employee
-      };
+        total_amount: totalAfterDiscount,
+        amount_tendered: amountTendered,
+        change_due: changeDue,
+        cashier_employee_id: cashierEmployeeId,
+      });
 
-      await createOrder(profile.current_business_id, orderData);
-
-      printReceipt(discount, finalTotal);
-      alert(`Order Placed! Total: $${finalTotal.toFixed(2)}`);
+      printReceipt(discount, totalAfterDiscount, amountTendered, changeDue);
       setCart([]);
+      setShowCashModal(false);
+      setPendingOrder(null);
     } catch (err) {
       console.error(err);
-      alert("Failed to process checkout");
+      alert("Failed to process order");
     }
   };
 
-  const printReceipt = (discount: number, finalTotal: number) => {
+  const printReceipt = (
+    discount: number,
+    finalTotal: number,
+    amountTendered?: number,
+    changeDue?: number,
+  ) => {
+    const subtotal = cart.reduce(
+      (acc, item) => acc + (item.default_price || 0) * item.quantity,
+      0,
+    );
+    const tax = subtotal * 0.1;
     const printWindow = window.open("", "_blank", "width=400,height=600");
     if (!printWindow) return;
 
@@ -211,8 +229,14 @@ const DashboardPage: React.FC = () => {
           <div class="total-row total-row-bold"><span>TOTAL</span><span>$${finalTotal.toFixed(2)}</span></div>
         </div>
         <div class="divider-double"></div>
-        <div class="info-row"><span>Payment:</span><span>CASH</span></div>
-        <div class="info-row"><span>Change:</span><span>$0.00</span></div>
+        ${
+          amountTendered !== undefined
+            ? `
+        <div class="info-row"><span>Cash Tendered</span><span>$${amountTendered.toFixed(2)}</span></div>
+        <div class="info-row"><span>Change</span><span>$${changeDue?.toFixed(2) || "0.00"}</span></div>
+        `
+            : ""
+        }
         <div class="divider"></div>
         <div class="barcode">*${orderNumber}*</div>
         <div class="footer">
@@ -248,13 +272,13 @@ const DashboardPage: React.FC = () => {
         <div className="flex-shrink-0 space-y-lg pb-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-sm">
-              <ShoppingCart className="w-6 h-6 text-primary-600" />
-              <h2 className="text-2xl font-bold text-gray-900">
+              <ShoppingCart className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Point of Sale
               </h2>
             </div>
             <div className="relative w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
               <Form
                 initialValues={{ searchQuery: "" }}
                 onSubmit={(values) => setSearchQuery(values.searchQuery)}
@@ -275,11 +299,13 @@ const DashboardPage: React.FC = () => {
         <div className="flex-1 overflow-y-auto min-h-0">
           {filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-3xl text-center">
-              <Package className="w-16 h-16 text-gray-300 mb-lg" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-xs">
+              <Package className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-lg" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-xs">
                 No products found
               </h3>
-              <p className="text-gray-500">Try adjusting your search</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                Try adjusting your search
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-lg pb-lg">
@@ -287,9 +313,9 @@ const DashboardPage: React.FC = () => {
                 <div
                   key={product.id}
                   onClick={() => addToCart(product)}
-                  className="group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden"
+                  className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md dark:hover:shadow-gray-900/50 transition-all cursor-pointer overflow-hidden"
                 >
-                  <div className="aspect-square bg-gray-50 relative">
+                  <div className="aspect-square bg-gray-50 dark:bg-gray-700 relative">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
@@ -297,7 +323,7 @@ const DashboardPage: React.FC = () => {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-gray-500">
                         <ImageIcon className="w-10 h-10 mb-xs" />
                         <span className="text-xs font-medium">No image</span>
                       </div>
@@ -309,18 +335,18 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="p-md">
-                    <h3 className="font-semibold text-gray-900 truncate">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                       {product.product_name}
                     </h3>
-                    <p className="text-xs text-gray-500 mt-xs truncate">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-xs truncate">
                       {product.sku || "—"}
                     </p>
                     <div className="flex items-center justify-between mt-md">
-                      <span className="text-lg font-bold text-gray-900">
+                      <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
                         ${(product.default_price || 0).toFixed(2)}
                       </span>
                       <button
-                        className="p-sm bg-primary-50 text-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
+                        className="p-sm bg-primary-50 dark:bg-primary-400/20 text-primary dark:text-primary-300 rounded-lg hover:bg-primary dark:hover:bg-primary-500 hover:text-white transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           addToCart(product);
@@ -339,7 +365,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Cart Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-96 bg-white border-l border-gray-200 shadow-xl transform transition-transform duration-300 z-20 ${
+        className={`fixed top-0 right-0 h-full w-96 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-xl transform transition-transform duration-300 z-20 ${
           cart.length > 0 ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -350,6 +376,18 @@ const DashboardPage: React.FC = () => {
           onCheckout={handleCheckout}
         />
       </div>
+
+      {/* Cash Payment Modal */}
+      {showCashModal && pendingOrder && (
+        <CashPaymentModal
+          total={pendingOrder.totalAfterDiscount}
+          onSubmit={handleCashPayment}
+          onCancel={() => {
+            setShowCashModal(false);
+            setPendingOrder(null);
+          }}
+        />
+      )}
     </div>
   );
 };

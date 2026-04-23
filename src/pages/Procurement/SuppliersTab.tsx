@@ -4,6 +4,7 @@ import { procurementService } from "../../services";
 import { ProcurementSupplier } from "../../data/type";
 import { Button } from "../../components/Buttons";
 import { SupplierModal } from "../../components/Modals";
+import Table, { Column } from "../../components/Table"; // adjust path as needed
 import { Plus, Edit, Trash2, Truck } from "lucide-react";
 
 const SuppliersTab: React.FC<{ businessId: string }> = ({ businessId }) => {
@@ -37,23 +38,78 @@ const SuppliersTab: React.FC<{ businessId: string }> = ({ businessId }) => {
     fetchSuppliers();
   };
 
-  // Loading skeleton
-  if (loading && !suppliers) {
-    return (
-      <div className="space-y-md">
-        <div className="flex justify-end">
-          <div className="h-9 bg-gray-200 rounded w-32 animate-pulse" />
+  // Column definitions for the Table component
+  const columns: Column<ProcurementSupplier>[] = [
+    {
+      header: "Name",
+      accessor: (row) => (
+        <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
+          {row.supplier_name}
+        </span>
+      ),
+    },
+    {
+      header: "Contact",
+      accessor: (row) => row.contact_name || "—",
+      className: "text-gray-600 dark:text-gray-300 whitespace-nowrap",
+    },
+    {
+      header: "Email",
+      accessor: (row) => row.email || "—",
+      className: "text-gray-600 dark:text-gray-300 whitespace-nowrap",
+    },
+    {
+      header: "Phone",
+      accessor: (row) => row.phone || "—",
+      className: "text-gray-600 dark:text-gray-300 whitespace-nowrap",
+    },
+    {
+      header: "Status",
+      accessor: (row) => (
+        <span
+          className={`inline-flex items-center px-sm py-xs rounded-full text-xs font-medium ${
+            row.status === "active"
+              ? "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-800"
+              : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600"
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+              row.status === "active"
+                ? "bg-green-500"
+                : "bg-gray-400 dark:bg-gray-500"
+            }`}
+          />
+          {row.status}
+        </span>
+      ),
+    },
+    {
+      header: "Actions",
+      accessor: (row) => (
+        <div className="flex items-center justify-end gap-sm">
+          <button
+            onClick={() => {
+              setEditingSupplier(row);
+              setShowModal(true);
+            }}
+            className="p-sm text-gray-500 dark:text-gray-400 hover:text-secondary-600 dark:hover:text-secondary-400 hover:bg-secondary-50 dark:hover:bg-secondary-900/20 rounded-lg transition-colors"
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(row.id!)}
+            className="p-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
-          <div className="p-md space-y-sm">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+      ),
+      className: "text-right whitespace-nowrap",
+    },
+  ];
 
   return (
     <div className="space-y-md">
@@ -71,117 +127,30 @@ const SuppliersTab: React.FC<{ businessId: string }> = ({ businessId }) => {
           Add Supplier
         </Button>
       </div>
-
-      {/* Suppliers Table */}
-      {suppliers && suppliers.length > 0 ? (
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[800px] md:min-w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-lg py-md text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-lg py-md text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-lg py-md text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-lg py-md text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Phone
-                  </th>
-                  <th className="px-lg py-md text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-lg py-md text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {suppliers.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-lg py-md font-medium text-gray-900 whitespace-nowrap">
-                      {s.supplier_name}
-                    </td>
-                    <td className="px-lg py-md text-gray-600 whitespace-nowrap">
-                      {s.contact_name || "—"}
-                    </td>
-                    <td className="px-lg py-md text-gray-600 whitespace-nowrap">
-                      {s.email || "—"}
-                    </td>
-                    <td className="px-lg py-md text-gray-600 whitespace-nowrap">
-                      {s.phone || "—"}
-                    </td>
-                    <td className="px-lg py-md whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-sm py-xs rounded-full text-xs font-medium ${
-                          s.status === "active"
-                            ? "bg-green-50 text-green-700"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                            s.status === "active"
-                              ? "bg-green-500"
-                              : "bg-gray-400"
-                          }`}
-                        />
-                        {s.status}
-                      </span>
-                    </td>
-                    <td className="px-lg py-md text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-sm">
-                        <button
-                          onClick={() => {
-                            setEditingSupplier(s);
-                            setShowModal(true);
-                          }}
-                          className="p-sm text-gray-500 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(s.id)}
-                          className="p-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <Table
+        columns={columns}
+        data={suppliers || []}
+        loading={loading} // loading handled by Table's built-in skeleton
+        emptyMessage="No suppliers found"
+      />
+      {/* Table or Empty State */}
+      {!loading && (!suppliers || suppliers.length === 0) && (
+        <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-3xl px-lg text-center">
+          <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-lg">
+            <Truck className="w-8 h-8 text-gray-400 dark:text-gray-500" />
           </div>
-        </div>
-      ) : (
-        /* Empty State */
-        <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl py-3xl px-lg text-center">
-          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-lg">
-            <Truck className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-xs">
-            No suppliers yet
-          </h3>
-          <p className="text-gray-500 mb-lg">
-            Add your first supplier to start creating purchase orders
-          </p>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              setEditingSupplier(null);
-              setShowModal(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-xs" />
-            Add Supplier
-          </Button>
+          {loading ? (
+            <div className="spin"></div>
+          ) : (
+            <>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-xs">
+                No suppliers yet
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-lg">
+                Add your first supplier to start creating purchase orders
+              </p>
+            </>
+          )}
         </div>
       )}
 

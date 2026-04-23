@@ -34,15 +34,6 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
     load();
   }, [role.id]);
 
-  //   const handleToggle = (permId: string) => {
-  //     setSelected((prev) => {
-  //       const next = new Set(prev);
-  //       if (next.has(permId)) next.delete(permId);
-  //       else next.add(permId);
-  //       return next;
-  //     });
-  //   };
-
   const handleSave = async () => {
     // Determine changes
     const current = await fetchRolePerms(role.id);
@@ -60,15 +51,17 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-7xl max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b">
-          <h3 className="text-xl font-bold">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-w-7xl min-w-5xl max-h-[80vh] overflow-y-auto p-6">
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             Permissions for {role.role_name}
           </h3>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="pt-6">
           {loading ? (
-            <div className="flex justify-center py-8">Loading...</div>
+            <div className="flex justify-center py-8 text-gray-500 dark:text-gray-400">
+              Loading...
+            </div>
           ) : (
             <Form
               initialValues={{ permissions: Array.from(selected) }}
@@ -82,7 +75,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
                   value: p.id,
                 }))}
               />
-              <div className="p-6 border-t flex justify-end space-x-3">
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
                 <Button variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>

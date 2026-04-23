@@ -26,13 +26,24 @@ const SelectInput: React.FC<InputProps> = ({
   return (
     <div className={`p-2 ${className}`}>
       {label && (
-        <label htmlFor={name} className="block text-gray-700 font-medium mb-2">
+        <label
+          htmlFor={name}
+          className="block text-gray-700 dark:text-gray-300 font-medium mb-2"
+        >
           {label}
         </label>
       )}
       <select
         name={name}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+        className={`
+          w-full px-3 py-2 rounded-md border
+          border-gray-300 dark:border-gray-600
+          bg-white dark:bg-gray-800
+          text-gray-900 dark:text-gray-100
+          focus:outline-none focus:ring-2
+          focus:ring-primary dark:focus:ring-primary-400
+          focus:border-primary dark:focus:border-primary-400
+        `}
         {...props}
         onChange={handleChange(name)}
         value={(values as FormikValues)[name]}

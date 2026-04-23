@@ -1,13 +1,34 @@
 import { useState } from "react";
+import * as yup from "yup";
+import { Form } from "../../components/Form";
+import { SelectInput, TextInput } from "../../components/Inputs";
+import { Button } from "../../components/Buttons";
 import { catalogService, procurementService } from "../../services";
 import { useAPI } from "../../hooks/useAPI";
-import { Button } from "../Buttons";
+import { Trash2 } from "lucide-react";
 
-const CreatePOModal: React.FC<{
+interface CreatePOModalProps {
   businessId: string;
   onClose: () => void;
   onCreated: () => void;
-}> = ({ businessId, onClose, onCreated }) => {
+}
+
+interface POItem {
+  product_id: string;
+  quantity: number;
+  unit_cost: number;
+}
+
+const validationSchema = yup.object({
+  supplier_id: yup.string().required("Supplier is required"),
+  expected_date: yup.string().nullable(),
+});
+
+const CreatePOModal: React.FC<CreatePOModalProps> = ({
+  businessId,
+  onClose,
+  onCreated,
+}) => {
   const { data: suppliers } = useAPI(() =>
     procurementService.getSuppliers(businessId),
   );
@@ -18,11 +39,7 @@ const CreatePOModal: React.FC<{
     procurementService.createPurchaseOrder,
   );
 
-  const [selectedSupplier, setSelectedSupplier] = useState("");
-  const [expectedDate, setExpectedDate] = useState("");
-  const [items, setItems] = useState<
-    Array<{ product_id: string; quantity: number; unit_cost: number }>
-  >([]);
+  const [items, setItems] = useState<POItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [unitCost, setUnitCost] = useState(0);
@@ -48,13 +65,17 @@ const CreatePOModal: React.FC<{
     setItems(items.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSupplier || items.length === 0)
-      return alert("Please select supplier and add items");
+  const handleSubmit = async (values: {
+    supplier_id: string;
+    expected_date: string;
+  }) => {
+    if (items.length === 0) {
+      alert("Please add at least one item");
+      return;
+    }
     await createPO(businessId, {
-      supplier_id: selectedSupplier,
-      expected_date: expectedDate || undefined,
+      supplier_id: values.supplier_id,
+      expected_date: values.expected_date || undefined,
       items,
     });
     onCreated();
@@ -62,135 +83,151 @@ const CreatePOModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-7xl max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b">
-          <h3 className="text-xl font-bold">Create Purchase Order</h3>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            Create Purchase Order
+          </h3>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Supplier</label>
-              <select
-                value={selectedSupplier}
-                onChange={(e) => setSelectedSupplier(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg"
-                required
-              >
-                <option value="">Select supplier</option>
-                {suppliers?.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.supplier_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Expected Date
-              </label>
-              <input
-                type="date"
-                value={expectedDate}
-                onChange={(e) => setExpectedDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
-          </div>
-          <div className="border rounded-lg p-4 mb-4">
-            <h4 className="font-medium mb-2">Add Items</h4>
-            <div className="grid grid-cols-4 gap-2 items-end">
-              <div className="col-span-2">
-                <label className="block text-xs mb-1">Product</label>
-                <select
-                  value={selectedProduct}
-                  onChange={(e) => setSelectedProduct(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="">Select product</option>
-                  {products?.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.product_name} (Cost: ${p.cost_price})
-                    </option>
-                  ))}
-                </select>
+
+        <Form
+          initialValues={{
+            supplier_id: "",
+            expected_date: "",
+          }}
+          validationSchema={validationSchema}
+          onSubmit={handleSubmit}
+        >
+          {() => (
+            <>
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <SelectInput
+                    name="supplier_id"
+                    label="Supplier"
+                    options={
+                      suppliers?.map((s) => ({
+                        label: s.supplier_name,
+                        value: s.id,
+                      })) || []
+                    }
+                    required
+                  />
+                  <TextInput
+                    name="expected_date"
+                    label="Expected Date"
+                    type="date"
+                  />
+                </div>
+
+                {/* Add Items Section */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50">
+                  <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3">
+                    Add Items
+                  </h4>
+                  <div className="grid grid-cols-4 gap-3 items-end">
+                    <div className="col-span-2">
+                      {/* SelectInput already has label, but we keep the wrapper */}
+                      <SelectInput
+                        name="product_id"
+                        label="Product"
+                        options={
+                          products?.map((p) => ({
+                            label: `${p.product_name} (Cost: ${p.cost_price?.toFixed(2)})`,
+                            value: p.id,
+                          })) || []
+                        }
+                      />
+                    </div>
+                    <TextInput
+                      label="Quantity"
+                      name="quantity"
+                      type="number"
+                      min="1"
+                    />
+                    <TextInput
+                      label="Unit Cost"
+                      name="unit_cost"
+                      type="number"
+                      min="1"
+                    />
+                    <div>
+                      <Button type="button" onClick={handleAddItem} size="sm">
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                {items.length > 0 && (
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                            Product
+                          </th>
+                          <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-300">
+                            Qty
+                          </th>
+                          <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-300">
+                            Unit Cost
+                          </th>
+                          <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-300">
+                            Total
+                          </th>
+                          <th className="px-4 py-3 w-10"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                        {items.map((item, idx) => {
+                          const product = products?.find(
+                            (p) => p.id === item.product_id,
+                          );
+                          return (
+                            <tr key={idx}>
+                              <td className="px-4 py-3">
+                                {product?.product_name}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                {item.quantity}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                ${item.unit_cost.toFixed(2)}
+                              </td>
+                              <td className="px-4 py-3 text-right font-medium">
+                                ${(item.quantity * item.unit_cost).toFixed(2)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveItem(idx)}
+                                  className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="block text-xs mb-1">Quantity</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-xs mb-1">Unit Cost</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={unitCost}
-                  onChange={(e) => setUnitCost(parseFloat(e.target.value) || 0)}
-                  placeholder="Auto"
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-              <div>
-                <Button type="button" onClick={handleAddItem}>
-                  Add
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3 bg-gray-50 dark:bg-gray-800">
+                <Button type="button" variant="secondary" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" loading={loading}>
+                  Create PO
                 </Button>
               </div>
-            </div>
-          </div>
-          {items.length > 0 && (
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2">Product</th>
-                  <th className="text-right py-2">Qty</th>
-                  <th className="text-right py-2">Unit Cost</th>
-                  <th className="text-right py-2">Total</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, idx) => {
-                  const product = products?.find(
-                    (p) => p.id === item.product_id,
-                  );
-                  return (
-                    <tr key={idx} className="border-b">
-                      <td className="py-2">{product?.product_name}</td>
-                      <td className="text-right">{item.quantity}</td>
-                      <td className="text-right">
-                        ${item.unit_cost.toFixed(2)}
-                      </td>
-                      <td className="text-right">
-                        ${(item.quantity * item.unit_cost).toFixed(2)}
-                      </td>
-                      <td>
-                        <button
-                          onClick={() => handleRemoveItem(idx)}
-                          className="text-red-500"
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            </>
           )}
-        </div>
-        <div className="p-6 border-t flex justify-end space-x-3">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSubmit} loading={loading}>
-            Create PO
-          </Button>
-        </div>
+        </Form>
       </div>
     </div>
   );

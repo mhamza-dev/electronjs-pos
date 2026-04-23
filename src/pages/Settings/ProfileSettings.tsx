@@ -53,34 +53,34 @@ const ProfileSettings: React.FC<{
     <div className="space-y-lg">
       {/* Header */}
       <div className="space-y-xs">
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
           Profile Settings
         </h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Manage your personal information and account security
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
         {/* Left Column: Profile Information */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-lg">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-lg">
           <div className="flex items-center gap-sm mb-lg">
-            <div className="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center text-primary-700">
+            <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-400/20 flex items-center justify-center text-primary-700 dark:text-primary-300">
               <User className="w-4 h-4" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Personal Details
             </h3>
           </div>
 
           {profileError && (
-            <div className="mb-md p-sm bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+            <div className="mb-md p-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm border border-red-100 dark:border-red-800">
               {profileError}
             </div>
           )}
 
           {profileSuccess && (
-            <div className="mb-md p-sm bg-green-50 text-green-600 rounded-lg text-sm border border-green-100">
+            <div className="mb-md p-sm bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm border border-green-100 dark:border-green-800">
               Profile updated successfully!
             </div>
           )}
@@ -119,22 +119,24 @@ const ProfileSettings: React.FC<{
         </div>
 
         {/* Right Column: Change Password */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-lg">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-lg">
           <div className="flex items-center gap-sm mb-lg">
-            <div className="w-8 h-8 rounded-full bg-secondary-50 flex items-center justify-center text-secondary-700">
+            <div className="w-8 h-8 rounded-full bg-secondary-50 dark:bg-secondary-400/20 flex items-center justify-center text-secondary-700 dark:text-secondary-300">
               <Lock className="w-4 h-4" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Security</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Security
+            </h3>
           </div>
 
           {passwordError && (
-            <div className="mb-md p-sm bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+            <div className="mb-md p-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm border border-red-100 dark:border-red-800">
               {passwordError}
             </div>
           )}
 
           {passwordSuccess && (
-            <div className="mb-md p-sm bg-green-50 text-green-600 rounded-lg text-sm border border-green-100">
+            <div className="mb-md p-sm bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm border border-green-100 dark:border-green-800">
               Password updated successfully!
             </div>
           )}

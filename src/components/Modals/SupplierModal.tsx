@@ -40,8 +40,8 @@ const SupplierModal: React.FC<SupplierModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-7xl max-h-[80vh] overflow-y-auto p-6">
-        <h3 className="text-xl font-bold mb-4">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-w-7xl min-w-5xl max-h-[80vh] overflow-y-auto p-6">
+        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
           {supplier ? "Edit Supplier" : "New Supplier"}
         </h3>
         <Form
@@ -72,7 +72,6 @@ const SupplierModal: React.FC<SupplierModalProps> = ({
             label="Tax ID / VAT"
             placeholder="123-456-789"
           />
-          {/* Status dropdown could be added if needed */}
           <div className="flex justify-end space-x-3 mt-6">
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancel

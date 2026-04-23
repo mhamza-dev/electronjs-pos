@@ -40,10 +40,21 @@ const CheckboxInput: React.FC<CheckboxInputProps> = ({
             className="sr-only peer"
             {...props}
           />
-          <div className="w-5 h-5 border-2 border-gray-300 rounded peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary-200 transition-all duration-200 mr-3 flex items-center justify-center">
+          <div
+            className={`
+              w-5 h-5 border-2 rounded transition-all duration-200 mr-3
+              flex items-center justify-center
+              border-gray-300 dark:border-gray-500
+              peer-checked:border-primary peer-checked:bg-primary
+              dark:peer-checked:border-primary-400 dark:peer-checked:bg-primary-400
+              peer-focus:ring-2 peer-focus:ring-primary-200
+              dark:peer-focus:ring-primary-800
+              peer-focus:ring-offset-2 dark:peer-focus:ring-offset-gray-900
+            `}
+          >
             {checked && (
               <svg
-                className="w-3.5 h-3.5 text-white"
+                className="w-3.5 h-3.5 text-white dark:text-gray-900"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -58,7 +69,9 @@ const CheckboxInput: React.FC<CheckboxInputProps> = ({
             )}
           </div>
           {label && (
-            <span className="text-sm font-medium text-gray-700">{label}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {label}
+            </span>
           )}
         </div>
       </label>

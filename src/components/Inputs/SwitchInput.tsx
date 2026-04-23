@@ -35,8 +35,11 @@ const SwitchInput: React.FC<SwitchInputProps> = ({
           onClick={handleChange}
           disabled={disabled}
           className={`
-            relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-            ${value ? "bg-primary" : "bg-gray-300"}
+            relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out
+            focus:outline-none focus:ring-2 focus:ring-offset-2
+            focus:ring-primary dark:focus:ring-primary-400
+            dark:focus:ring-offset-gray-900
+            ${value ? "bg-primary dark:bg-primary-400" : "bg-gray-300 dark:bg-gray-600"}
             ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           `}
         >
@@ -49,7 +52,11 @@ const SwitchInput: React.FC<SwitchInputProps> = ({
         </button>
         {label && (
           <span
-            className={`ml-3 text-sm font-medium ${disabled ? "text-gray-400" : "text-gray-700"}`}
+            className={`ml-3 text-sm font-medium ${
+              disabled
+                ? "text-gray-400 dark:text-gray-500"
+                : "text-gray-700 dark:text-gray-300"
+            }`}
             onClick={!disabled ? handleChange : undefined}
             style={{ cursor: !disabled ? "pointer" : "default" }}
           >

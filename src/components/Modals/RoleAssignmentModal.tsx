@@ -19,8 +19,10 @@ const RoleAssignmentModal: React.FC<RoleAssignmentModalProps> = ({
 }) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-7xl max-h-[80vh] overflow-y-auto p-6">
-        <h3 className="text-xl font-bold mb-4">Change Role</h3>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-w-7xl min-w-5xl max-h-[80vh] overflow-y-auto p-6">
+        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+          Change Role
+        </h3>
         <Form
           initialValues={{
             role_id:

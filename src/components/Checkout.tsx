@@ -44,12 +44,11 @@ const Checkout: React.FC<CheckoutProps> = ({ subtotal, tax, onCheckout }) => {
   const getDiscount = (formik: FormikProps<CheckoutFormValues>) => {
     const discount = formik.values.discount || 0;
     const totalAfterDiscount = Math.max(0, totalBeforeDiscount - discount);
-
     return { discount, totalAfterDiscount };
   };
 
   return (
-    <div className="p-6 border-t border-gray-200 bg-gray-50">
+    <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
       <Form
         initialValues={initialValues}
         validationSchema={validationSchema}
@@ -72,21 +71,21 @@ const Checkout: React.FC<CheckoutProps> = ({ subtotal, tax, onCheckout }) => {
 
               {/* Totals */}
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                   <span>Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                   <span>Tax (10%)</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
                 {(discount || 0) > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                     <span>Discount</span>
                     <span>-${(discount || 0).toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
+                <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-gray-100 pt-2 border-t border-gray-200 dark:border-gray-600">
                   <span>Total</span>
                   <span>${totalAfterDiscount.toFixed(2)}</span>
                 </div>

@@ -25,15 +25,15 @@ const BusinessSettings: React.FC<{ businessId: string }> = ({ businessId }) => {
     return (
       <div className="space-y-lg">
         <div className="space-y-xs">
-          <div className="h-7 bg-gray-200 rounded w-1/3 animate-pulse" />
-          <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+          <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse" />
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 animate-pulse" />
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-lg space-y-md">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-lg space-y-md">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="space-y-sm">
-                <div className="h-4 bg-gray-200 rounded w-1/4 animate-pulse" />
-                <div className="h-10 bg-gray-200 rounded w-full animate-pulse" />
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 animate-pulse" />
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse" />
               </div>
             ))}
           </div>
@@ -46,16 +46,16 @@ const BusinessSettings: React.FC<{ businessId: string }> = ({ businessId }) => {
     <div className="space-y-lg max-w-width-container-md">
       {/* Header */}
       <div className="space-y-xs">
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
           Business Settings
         </h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Update your business information and regional preferences
         </p>
       </div>
 
       {/* Form Card */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-lg">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-lg">
         <Form
           initialValues={{
             business_name: business.business_name,
@@ -107,7 +107,7 @@ const BusinessSettings: React.FC<{ businessId: string }> = ({ businessId }) => {
           </div>
 
           {/* Footer Actions */}
-          <div className="flex justify-end mt-lg pt-sm border-t border-gray-100">
+          <div className="flex justify-end mt-lg pt-sm border-t border-gray-100 dark:border-gray-700">
             <Button
               type="submit"
               variant="primary"
@@ -121,7 +121,7 @@ const BusinessSettings: React.FC<{ businessId: string }> = ({ businessId }) => {
       </div>
 
       {/* Additional Info */}
-      <div className="text-xs text-gray-400 text-right">
+      <div className="text-xs text-gray-400 dark:text-gray-500 text-right">
         Last updated: {new Date(business.updated_at).toLocaleString()}
       </div>
     </div>

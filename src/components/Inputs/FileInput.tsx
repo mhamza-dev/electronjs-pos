@@ -104,7 +104,10 @@ const FileInput: React.FC<FileInputProps> = ({
   return (
     <div className={`p-2 ${className}`}>
       {label && (
-        <label htmlFor={name} className="block text-gray-700 font-medium mb-2">
+        <label
+          htmlFor={name}
+          className="block text-gray-700 dark:text-gray-300 font-medium mb-2"
+        >
           {label}
         </label>
       )}
@@ -117,14 +120,26 @@ const FileInput: React.FC<FileInputProps> = ({
           multiple={multiple}
           onChange={handleFileChange}
           onBlur={() => setFieldTouched(name, true)}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary hover:file:bg-primary-100 cursor-pointer border border-gray-300 rounded-md p-2"
+          className={`
+            block w-full text-sm rounded-md p-2 cursor-pointer
+            text-gray-500 dark:text-gray-400
+            file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0
+            file:text-sm file:font-semibold file:cursor-pointer
+            file:bg-primary-50 file:text-primary
+            dark:file:bg-gray-700 dark:file:text-primary-300
+            hover:file:bg-primary-100
+            dark:hover:file:bg-gray-600
+            border border-gray-300 dark:border-gray-600
+            focus:outline-none focus:ring-2 focus:ring-primary-200
+            dark:focus:ring-primary-800
+          `}
           {...props}
         />
         {hasFile && (
           <button
             type="button"
             onClick={handleRemove}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             title="Remove file"
           >
             <svg
@@ -149,7 +164,7 @@ const FileInput: React.FC<FileInputProps> = ({
           {previewUrls.map((url, idx) => (
             <div
               key={idx}
-              className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200"
+              className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
             >
               <img
                 src={url}
@@ -162,7 +177,7 @@ const FileInput: React.FC<FileInputProps> = ({
       )}
 
       {!showPreview && hasFile && (
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
           {multiple
             ? `${(currentValue as any[]).length} file(s) selected`
             : "File selected"}

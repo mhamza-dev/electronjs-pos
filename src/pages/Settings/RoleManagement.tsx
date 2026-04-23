@@ -57,10 +57,10 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-xs">
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
             Roles & Permissions
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Manage what each role can access within your business
           </p>
         </div>
@@ -98,9 +98,9 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
       </div>
 
       {/* Info Alert for System Roles */}
-      <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-md flex items-start gap-sm">
+      <div className="bg-secondary-50 dark:bg-secondary-400/10 border border-secondary-200 dark:border-secondary-700 rounded-lg p-md flex items-start gap-sm">
         <svg
-          className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5"
+          className="w-5 h-5 text-secondary-600 dark:text-secondary-400 flex-shrink-0 mt-0.5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -113,8 +113,10 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
           />
         </svg>
         <div>
-          <p className="text-sm font-medium text-secondary-800">System Roles</p>
-          <p className="text-xs text-secondary-600 mt-0.5">
+          <p className="text-sm font-medium text-secondary-800 dark:text-secondary-300">
+            System Roles
+          </p>
+          <p className="text-xs text-secondary-600 dark:text-secondary-400 mt-0.5">
             Roles marked as system roles cannot be deleted. They provide
             essential functionality.
           </p>
@@ -127,25 +129,25 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
           {roles.map((role) => (
             <div
               key={role.id}
-              className="bg-white border border-gray-200 rounded-xl p-lg hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-lg hover:shadow-md dark:hover:shadow-gray-900/50 transition-shadow"
             >
               <div className="flex items-start justify-between gap-md">
                 {/* Role Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-sm flex-wrap">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
                       {role.role_name}
                     </h3>
                     {role.is_system_role && (
-                      <span className="inline-flex items-center px-sm py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                      <span className="inline-flex items-center px-sm py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                         System
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 mt-xs line-clamp-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-xs line-clamp-2">
                     {role.description || "No description provided"}
                   </p>
-                  <p className="text-xs text-gray-400 mt-sm">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-sm">
                     Created {new Date(role.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -157,7 +159,7 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
                       setEditingRole(role);
                       setShowPermissionModal(true);
                     }}
-                    className="inline-flex items-center px-md py-sm text-sm font-medium text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                    className="inline-flex items-center px-md py-sm text-sm font-medium text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-900/30 rounded-lg transition-colors"
                     title="Manage permissions"
                   >
                     <svg
@@ -178,7 +180,7 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
 
                   <button
                     onClick={() => setEditingRole(role)}
-                    className="inline-flex items-center px-md py-sm text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="inline-flex items-center px-md py-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     title="Edit role"
                   >
                     <svg
@@ -200,7 +202,7 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
                   {!role.is_system_role && (
                     <button
                       onClick={() => handleDeleteRole(role.id)}
-                      className="inline-flex items-center px-md py-sm text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="inline-flex items-center px-md py-sm text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                       title="Delete role"
                     >
                       <svg
@@ -225,10 +227,10 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl py-3xl px-lg text-center">
-          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-lg">
+        <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-3xl px-lg text-center">
+          <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-lg">
             <svg
-              className="w-8 h-8 text-gray-400"
+              className="w-8 h-8 text-gray-400 dark:text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -241,10 +243,10 @@ const RoleManagement: React.FC<{ businessId: string }> = ({ businessId }) => {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-xs">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-xs">
             No roles yet
           </h3>
-          <p className="text-gray-500 mb-lg">
+          <p className="text-gray-500 dark:text-gray-400 mb-lg">
             Create your first role to start managing permissions
           </p>
           <Button

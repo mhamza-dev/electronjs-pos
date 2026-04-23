@@ -32,20 +32,20 @@ const LoginPage: React.FC = () => {
     }
   };
   return (
-    <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 font-poppins">
-      <div className="w-width-card-lg p-lg bg-white rounded-xl shadow-lg border border-gray-100">
+    <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 dark:bg-gray-950 font-poppins">
+      <div className="w-width-card-lg p-lg bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
         <div className="flex justify-center mb-md">
           <img src={logo} alt="Vendora" className="w-24 h-24" />
         </div>
-        <h2 className="text-xl font-bold text-center mb-xs text-gray-900 tracking-tight">
+        <h2 className="text-xl font-bold text-center mb-xs text-gray-900 dark:text-gray-100 tracking-tight">
           Welcome Back
         </h2>
-        <p className="text-center text-gray-400 mb-md font-medium">
+        <p className="text-center text-gray-400 dark:text-gray-500 mb-md font-medium">
           Please login to your Vendora account
         </p>
 
         {error && (
-          <div className="mb-lg p-sm bg-red-50 text-red-500 rounded-xl text-sm font-bold text-center border border-red-100">
+          <div className="mb-lg p-sm bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-xl text-sm font-bold text-center border border-red-100 dark:border-red-800">
             {error}
           </div>
         )}
@@ -81,11 +81,11 @@ const LoginPage: React.FC = () => {
           </div>
         </Form>
         <div className="mt-lg text-center">
-          <p className="text-gray-500 font-medium">
+          <p className="text-gray-500 dark:text-gray-400 font-medium">
             Don't have an account?{" "}
             <Link
               to="/signup"
-              className="text-primary font-bold hover:underline"
+              className="text-primary dark:text-primary-300 font-bold hover:underline"
             >
               Sign up
             </Link>

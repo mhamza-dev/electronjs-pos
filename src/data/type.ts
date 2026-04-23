@@ -210,15 +210,18 @@ export interface PosSalesOrder {
   customer_id: string | null;
   cashier_employee_id: string | null;
   order_number: string | null;
-  order_date: Timestamp;
-  status: OrderStatus;
-  payment_status: PaymentStatus;
+  order_date: string;
+  status: string;
+  payment_status: string;
+  payment_method: string; // 👈 new
+  amount_tendered: number | null; // 👈 new
+  change_due: number | null; // 👈 new
   subtotal_amount: number;
   discount_amount: number;
   tax_amount: number;
   total_amount: number;
-  created_at: Timestamp;
-  updated_at: Timestamp;
+  created_at: string;
+  updated_at: string;
   // Expanded
   customer?: PosCustomer;
   cashier?: OrgEmployee;

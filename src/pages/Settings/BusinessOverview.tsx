@@ -37,20 +37,20 @@ const BusinessesOverview: React.FC = () => {
     return (
       <div className="space-y-lg">
         <div className="space-y-xs">
-          <div className="h-7 bg-gray-200 rounded w-1/3 animate-pulse" />
-          <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+          <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse" />
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 animate-pulse" />
         </div>
         <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="bg-white border border-gray-200 rounded-xl p-lg animate-pulse"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-lg animate-pulse"
             >
-              <div className="h-5 bg-gray-200 rounded w-3/4 mb-sm" />
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-md" />
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-sm" />
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-md" />
               <div className="flex justify-between items-center mt-md">
-                <div className="h-5 bg-gray-200 rounded w-16" />
-                <div className="h-8 bg-gray-200 rounded w-20" />
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20" />
               </div>
             </div>
           ))}
@@ -64,10 +64,10 @@ const BusinessesOverview: React.FC = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-xs">
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
             Your Businesses
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Switch between your businesses or create a new one
           </p>
         </div>
@@ -103,18 +103,24 @@ const BusinessesOverview: React.FC = () => {
             return (
               <div
                 key={business.id}
-                className={`relative bg-white border rounded-xl p-lg transition-all hover:shadow-md ${
+                className={`relative bg-white dark:bg-gray-800 border rounded-xl p-lg transition-all hover:shadow-md dark:hover:shadow-gray-900/50 ${
                   isActive
-                    ? "border-primary-500 ring-1 ring-primary-200"
-                    : "border-gray-200"
+                    ? "border-primary-500 dark:border-primary-400 ring-1 ring-primary-200 dark:ring-primary-800"
+                    : "border-gray-200 dark:border-gray-700"
                 }`}
               >
                 {/* Active indicator badge */}
                 {isActive && (
-                  <div className="absolute -top-2 left-4">
-                    <span className="inline-flex items-center px-sm py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 border border-primary-200">
+                  <div className="absolute -top-3 left-4 z-10">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium 
+                        bg-background dark:bg-surface 
+                        text-primary-600 dark:text-primary-300 
+                        border border-primary-300 dark:border-primary-700 
+                        shadow-sm backdrop-blur`}
+                    >
                       <svg
-                        className="w-3 h-3 mr-1"
+                        className="w-3 h-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -131,15 +137,15 @@ const BusinessesOverview: React.FC = () => {
 
                 {/* Business Info */}
                 <div className="mb-md">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
                     {business.business_name}
                   </h3>
                   {business.legal_name && (
-                    <p className="text-sm text-gray-500 mt-xs truncate">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-xs truncate">
                       {business.legal_name}
                     </p>
                   )}
-                  <div className="flex items-center gap-sm mt-sm text-xs text-gray-400">
+                  <div className="flex items-center gap-sm mt-sm text-xs text-gray-400 dark:text-gray-500">
                     <span className="inline-flex items-center">
                       <svg
                         className="w-3 h-3 mr-1"
@@ -162,8 +168,8 @@ const BusinessesOverview: React.FC = () => {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex items-center justify-between pt-sm border-t border-gray-100">
-                  <span className="text-xs text-gray-400">
+                <div className="flex items-center justify-between pt-sm border-t border-gray-100 dark:border-gray-700">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
                     {business.status === "active" ? "Active" : business.status}
                   </span>
                   <Button
@@ -182,10 +188,10 @@ const BusinessesOverview: React.FC = () => {
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl py-3xl px-lg text-center">
-          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-lg">
+        <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-3xl px-lg text-center">
+          <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-lg">
             <svg
-              className="w-8 h-8 text-gray-400"
+              className="w-8 h-8 text-gray-400 dark:text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -198,10 +204,10 @@ const BusinessesOverview: React.FC = () => {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-xs">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-xs">
             No businesses yet
           </h3>
-          <p className="text-gray-500 mb-lg">
+          <p className="text-gray-500 dark:text-gray-400 mb-lg">
             Create your first business to get started
           </p>
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>

@@ -7,7 +7,6 @@ import {
 } from "react-router-dom";
 import { LoginPage, SignupPage } from "./pages/Auth";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
-import EmployeesPage from "./pages/Employees/EmployeesPage";
 import ProductsPage from "./pages/Products/ProductsPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import SettingsPage from "./pages/Settings/SettingsPage";
@@ -55,14 +54,14 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
+          {/* <Route
             path="/employees"
             element={
               <ProtectedRoute>
                 <EmployeesPage />
               </ProtectedRoute>
             }
-          />
+          /> */}
           <Route
             path="/products"
             element={

@@ -21,7 +21,10 @@ const TextAreaInput: React.FC<TextAreaProps> = ({
   return (
     <div className={`p-2 ${className}`}>
       {label && (
-        <label htmlFor={name} className="block text-gray-700 font-medium mb-2">
+        <label
+          htmlFor={name}
+          className="block text-gray-700 dark:text-gray-300 font-medium mb-2"
+        >
           {label}
         </label>
       )}
@@ -29,7 +32,16 @@ const TextAreaInput: React.FC<TextAreaProps> = ({
         name={name}
         id={name}
         value={(values as FormikValues)[name] || ""}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-y"
+        className={`
+          w-full px-3 py-2 rounded-md border resize-y
+          border-gray-300 dark:border-gray-600
+          bg-white dark:bg-gray-800
+          text-gray-900 dark:text-gray-100
+          placeholder-gray-400 dark:placeholder-gray-500
+          focus:outline-none focus:ring-2
+          focus:ring-primary dark:focus:ring-primary-400
+          focus:border-primary dark:focus:border-primary-400
+        `}
         onChange={handleChange(name)}
         onBlur={() => setFieldTouched(name, true)}
         rows={rows}

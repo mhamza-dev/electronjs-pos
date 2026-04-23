@@ -110,17 +110,19 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-7xl max-h-[80vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-100">
-          <h3 className="text-xl font-bold text-gray-900">Invite New User</h3>
-          <p className="text-sm text-gray-500 mt-1">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-w-7xl min-w-5xl max-h-[80vh] overflow-y-auto p-6">
+        <div className="border-b border-gray-100 dark:border-gray-700 pb-4">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            Invite New User
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Send an invitation email to add a new team member
           </p>
         </div>
 
-        <div className="p-6">
+        <div className="pt-6">
           {error && (
-            <div className="mb-4 p-sm bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+            <div className="mb-4 p-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm border border-red-100 dark:border-red-800">
               {error}
             </div>
           )}
@@ -177,7 +179,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
               />
             </div>
 
-            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
               <Button type="button" variant="secondary" onClick={onClose}>
                 Cancel
               </Button>

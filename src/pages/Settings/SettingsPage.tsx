@@ -18,7 +18,7 @@ const Tabs: React.FC<{
   active: number;
   onChange: (idx: number) => void;
 }> = ({ tabs, active, onChange }) => (
-  <div className="border-b border-gray-200">
+  <div className="border-b border-gray-200 dark:border-gray-700">
     <nav className="flex space-x-1">
       {tabs.map((tab, idx) => (
         <button
@@ -26,8 +26,8 @@ const Tabs: React.FC<{
           onClick={() => onChange(idx)}
           className={`flex items-center gap-sm px-lg py-md text-sm font-medium transition-all border-b-2 -mb-px ${
             active === idx
-              ? "border-primary text-primary"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              ? "border-primary dark:border-primary-400 text-primary dark:text-primary-400"
+              : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500"
           }`}
         >
           {tab.icon}
@@ -77,11 +77,11 @@ const SettingsPage: React.FC = () => {
       {/* Sticky Header */}
       <div className="flex-shrink-0 space-y-md pb-md">
         <div className="space-y-xs">
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-sm">
-            <Settings className="w-6 h-6 text-primary-600" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight flex items-center gap-sm">
+            <Settings className="w-6 h-6 text-primary-600 dark:text-primary-400" />
             Settings
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Manage your account, business preferences, and team access
           </p>
         </div>
@@ -90,7 +90,7 @@ const SettingsPage: React.FC = () => {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-lg">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-lg">
           {visibleTabs[activeTab]?.name === "Profile" && (
             <ProfileSettings profile={profile} onUpdate={refreshProfile} />
           )}

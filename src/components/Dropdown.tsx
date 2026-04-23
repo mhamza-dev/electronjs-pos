@@ -53,13 +53,13 @@ const Dropdown: React.FC<DropdownProps> = ({
   };
 
   const defaultTrigger = (
-    <div className="flex items-center gap-xs px-sm py-xs bg-gray-50 border border-gray-200 rounded-lg cursor-pointer">
+    <div className="flex items-center gap-xs px-sm py-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer">
       {selectedOption?.icon}
-      <span className="text-sm text-gray-700 font-medium">
+      <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
         {selectedOption?.label || placeholder}
       </span>
       <ChevronDown
-        className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
       />
     </div>
   );
@@ -70,13 +70,13 @@ const Dropdown: React.FC<DropdownProps> = ({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className="w-full focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
+        className="w-full focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-400 rounded-lg"
       >
         {renderTrigger ? renderTrigger(selectedOption) : defaultTrigger}
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
           <ul className="py-xs max-h-60 overflow-y-auto">
             {options.map((option) => (
               <li
@@ -84,8 +84,8 @@ const Dropdown: React.FC<DropdownProps> = ({
                 onClick={() => handleSelect(option.value)}
                 className={`flex items-center px-md py-sm text-sm cursor-pointer transition-colors ${
                   option.value === value
-                    ? "bg-primary-50 text-primary-700"
-                    : "text-gray-700 hover:bg-gray-50"
+                    ? "bg-primary-50 dark:bg-primary-400/20 text-primary-700 dark:text-primary-300"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}
               >
                 {option.icon && <span className="mr-sm">{option.icon}</span>}

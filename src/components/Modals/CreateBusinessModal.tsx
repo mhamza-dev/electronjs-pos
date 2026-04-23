@@ -41,8 +41,10 @@ const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-7xl max-h-[80vh] overflow-y-auto p-6">
-        <h3 className="text-xl font-bold mb-4">Create New Business</h3>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-w-7xl min-w-5xl max-h-[80vh] overflow-y-auto p-6">
+        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+          Create New Business
+        </h3>
         <Form
           initialValues={{
             business_name: "",
@@ -69,7 +71,13 @@ const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={loading}>
+            <Button
+              inForm
+              disableIfInvalid
+              type="submit"
+              variant="primary"
+              loading={loading}
+            >
               Create
             </Button>
           </div>
