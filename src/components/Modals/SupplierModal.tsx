@@ -3,7 +3,7 @@ import { Form } from "../Form";
 import { TextInput } from "../Inputs";
 import { Button } from "../Buttons";
 import * as yup from "yup";
-import { ProcurementSupplier } from "../../data/type";
+import { ProcurementSupplier } from "../../data/types";
 
 interface SupplierModalProps {
   supplier: ProcurementSupplier | null;

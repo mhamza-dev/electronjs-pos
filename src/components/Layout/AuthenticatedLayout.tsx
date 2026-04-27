@@ -1,27 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Package,
-  Truck,
-  Settings,
-  LogOut,
-  ChevronDown,
-  Store,
-  Sun,
-  Moon,
-} from "lucide-react";
+import { LogOut, ChevronDown, Store, Sun, Moon } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { authService } from "../../services";
+import { getBusinessById } from "../../services/businessService"; // direct named import
 import logo from "../../assets/logo.svg";
 import Dropdown from "../Dropdown";
 import { Button } from "../Buttons";
+import type { BusinessType } from "../../data/types";
+import { ALL_MENU_ITEMS } from "../../data/constants";
+import { ActiveBusinessProvider } from "../../contexts/ActiveBusinessContext";
 
-interface AuthenticatedLayoutProps {
-  children: React.ReactNode;
-}
-
-const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
+const AuthenticatedLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const location = useLocation();
@@ -29,7 +18,7 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
   const path = location.pathname;
   const { profile, refreshProfile, signOut } = useAuth();
 
-  // ----- Theme toggling logic -----
+  // ── Theme ────────────────────────────────────────────────────
   const [isDark, setIsDark] = useState<boolean>(() => {
     const stored = localStorage.getItem("theme");
     if (stored === "dark") return true;
@@ -49,12 +38,10 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
   }, [isDark]);
 
   const toggleTheme = () => setIsDark((prev) => !prev);
-  // ----- End theme logic -----
 
-  // ----- Sidebar collapse logic -----
+  // ── Sidebar collapse ────────────────────────────────────────
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
-    const saved = localStorage.getItem("sidebarCollapsed");
-    return saved === "true";
+    return localStorage.getItem("sidebarCollapsed") === "true";
   });
 
   const toggleSidebar = () => {
@@ -64,63 +51,75 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
       return next;
     });
   };
-  // ----- End sidebar logic -----
 
-  // Current business context
-  const currentBusinessMembership = profile?.business_users.find(
-    (bu) => bu.business_id === profile.current_business_id,
-  );
-  const currentRole = currentBusinessMembership?.role?.role_name || "Staff";
-  const availableBusinesses = profile?.business_users || [];
+  // ── Self-contained business switching ───────────────────────
+  const [activeBusinessId, setActiveBusinessId] = useState<string>(() => {
+    // Initialise from localStorage or fallback to profile
+    return (
+      localStorage.getItem("activeBusinessId") || profile?.business_id || ""
+    );
+  });
+
+  // Persist to localStorage whenever it changes
+  useEffect(() => {
+    if (activeBusinessId) {
+      localStorage.setItem("activeBusinessId", activeBusinessId);
+    }
+  }, [activeBusinessId]);
+
+  // Sync with profile if it loads after mount
+  useEffect(() => {
+    if (profile?.business_id && !activeBusinessId) {
+      setActiveBusinessId(profile.business_id);
+    }
+  }, [profile?.business_id]);
+
+  // Fetch current business type (for dynamic menu filtering)
+  const [businessType, setBusinessType] = useState<BusinessType | null>(null);
+
+  useEffect(() => {
+    if (!activeBusinessId) return;
+    getBusinessById(activeBusinessId).then(({ data }) => {
+      setBusinessType(data?.type ?? null);
+    });
+  }, [activeBusinessId]);
+
+  const [businessReady, setBusinessReady] = useState(false);
+
+  // Update ready state when activeBusinessId changes
+  useEffect(() => {
+    // Consider the business ready if activeBusinessId is non-empty.
+    // This will be true once we have an ID from localStorage or profile.
+    setBusinessReady(!!activeBusinessId);
+  }, [activeBusinessId]);
+
+  // Current user role (adjust based on your actual auth context structure)
+  const currentRole: string = profile?.role ?? "staff"; // or derive from memberships
+
+  // Available businesses for switcher (must be provided by auth context)
+  const availableBusinesses = profile?.businesses ?? []; // e.g., { business_id, name }[]
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
   };
 
-  const handleSwitchBusiness = async (businessId: string) => {
-    if (!profile?.id) return;
-    try {
-      await authService.switchBusiness(profile.id, businessId);
-      await refreshProfile();
-    } catch (error) {
-      console.error("Failed to switch business:", error);
-      alert("Could not switch business.");
-    }
+  const handleSwitchBusiness = (businessId: string) => {
+    setActiveBusinessId(businessId);
+    // optional: refresh any business‑scoped data after switch
+    refreshProfile();
   };
 
-  const menuItems = [
-    {
-      name: "Dashboard",
-      path: "/dashboard",
-      adminOnly: false,
-      icon: LayoutDashboard,
-    },
-    {
-      name: "Products",
-      path: "/products",
-      adminOnly: false,
-      icon: Package,
-    },
-    {
-      name: "Procurement",
-      path: "/procurement",
-      adminOnly: true,
-      icon: Truck,
-    },
-    {
-      name: "Settings",
-      path: "/settings",
-      adminOnly: false,
-      icon: Settings,
-    },
-  ];
+  // Filter menu items based on business type and user role
+  const filteredMenuItems = ALL_MENU_ITEMS.filter((item) => {
+    if (!item.businessTypes.includes(businessType ?? "hybrid")) return false;
+    if (item.adminOnly && currentRole !== "admin" && currentRole !== "owner")
+      return false;
+    return true;
+  });
 
-  const filteredMenuItems = menuItems.filter(
-    (item) => !item.adminOnly || currentRole === "admin",
-  );
   const activePageTitle =
-    menuItems.find((item) => item.path === path)?.name || "Dashboard";
+    ALL_MENU_ITEMS.find((item) => item.path === path)?.name || "Dashboard";
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden font-poppins">
@@ -130,7 +129,7 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
           sidebarCollapsed ? "w-[72px]" : "w-width-sidebar"
         }`}
       >
-        {/* Logo Area & Collapse Toggle */}
+        {/* Logo & Collapse Toggle */}
         <div
           className={`h-height-header flex items-center border-b border-gray-100 dark:border-gray-700 ${
             sidebarCollapsed ? "justify-center px-0" : "px-lg justify-between"
@@ -156,7 +155,7 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">
           {filteredMenuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = path === item.path;
             const Icon = item.icon;
             return (
               <Link
@@ -175,8 +174,6 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
               >
                 <Icon
                   className={`w-5 h-5 transition-colors ${
-                    sidebarCollapsed ? "" : "mr-0"
-                  } ${
                     isActive
                       ? "text-primary-700 dark:text-primary-300"
                       : "text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300"
@@ -193,7 +190,7 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
           })}
         </nav>
 
-        {/* Footer / Logout */}
+        {/* Logout */}
         <div className="h-height-footer border-t border-gray-100 dark:border-gray-700 flex items-center justify-center px-md">
           {sidebarCollapsed ? (
             <button
@@ -223,11 +220,11 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
           <div className="flex items-center space-x-md">
             {/* Business Switcher */}
             <Dropdown
-              options={availableBusinesses.map((b) => ({
-                label: b.business.business_name,
+              options={availableBusinesses.map((b: any) => ({
+                label: b.name,
                 value: b.business_id,
               }))}
-              value={profile?.current_business_id || ""}
+              value={activeBusinessId}
               onChange={handleSwitchBusiness}
               renderTrigger={(selected) => (
                 <div className="flex items-center gap-xs px-sm py-xs hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
@@ -240,7 +237,7 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
               )}
             />
 
-            {/* Theme Toggle Button */}
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -270,8 +267,18 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-lg">{children}</main>
+        {/* Page Content – inject businessId to children */}
+        <main className="flex-1 overflow-y-auto p-lg">
+          {businessReady ? (
+            <ActiveBusinessProvider businessId={activeBusinessId}>
+              {children}
+            </ActiveBusinessProvider>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
+            </div>
+          )}
+        </main>
 
         {/* Footer */}
         <footer className="h-height-footer bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex items-center px-lg text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">

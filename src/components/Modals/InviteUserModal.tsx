@@ -5,7 +5,7 @@ import { Button } from "../Buttons";
 import * as yup from "yup";
 import { supabase } from "../../lib/supabase";
 import { rbacService, employeeService } from "../../services";
-import { AuthRole } from "../../data/type";
+import { AuthRole } from "../../data/types";
 
 interface InviteUserModalProps {
   businessId: string;

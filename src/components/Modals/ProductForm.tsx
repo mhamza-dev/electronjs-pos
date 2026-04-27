@@ -12,7 +12,7 @@ import {
 import { Button } from "../Buttons";
 import { useAuth } from "../../contexts/AuthContext";
 import { uomOptions, nonInventoryUOMs } from "../../data/constants";
-import { CatalogProductInsert } from "../../data/type";
+import { CatalogProductInsert } from "../../data/types";
 
 interface FormModalProps {
   isVisible: boolean;

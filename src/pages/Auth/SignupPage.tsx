@@ -3,74 +3,50 @@ import { useNavigate, Link } from "react-router-dom";
 import { Form } from "../../components/Form";
 import { TextInput, SelectInput } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
-import { businessService, rbacService, authService } from "../../services";
+import { signUpWithBusiness } from "../../services/authService"; // only this needed
 import { useAuth } from "../../contexts/AuthContext";
-import { useAPI } from "../../hooks/useAPI";
+import { useApi } from "../../hooks"; // updated hook
 import { businessCategoryOptions } from "../../data/constants";
 import logo from "../../assets/logo.svg";
+import { SignUpParams } from "../../services/authService";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
 
+  const adaptedSignUp = async (params: SignUpParams) => {
+    const response = await signUpWithBusiness(params);
+    return { data: response, error: response.error };
+  };
+
   const {
     loading: signupLoading,
     error: signupError,
     request: signup,
-  } = useAPI(authService.signup);
-
-  const {
-    loading: createBusinessLoading,
-    error: createBusinessError,
-    request: createBusiness,
-  } = useAPI(businessService.createBusiness);
+  } = useApi(adaptedSignUp);
 
   const handleSignup = async (values: any) => {
-    // 1. Create auth user
-    const authData = await signup(
-      values.email,
-      values.password,
-      values.fullName,
-    );
-    if (!authData.user) throw new Error("Signup failed");
-
-    const userId = authData.user.id;
-
-    // 2. Create the business (owner = current user)
-    const newBusiness = await createBusiness({
-      owner_user_id: userId,
+    // Call the wrapper – the hook will unwrap and throw on error
+    const result = await signup({
+      email: values.email,
+      password: values.password,
+      full_name: values.fullName,
       business_name: values.businessName,
-      legal_name: values.businessName,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      currency_code: "USD",
-      business_category: values.business_category, // 👈 pass category
+      business_type: values.business_category,
     });
 
-    // 3. Assign the 'admin' role to the owner
-    const roles = await rbacService.getRoles(newBusiness.id);
-    const adminRole = roles.find((r) => r.role_name === "admin");
-    if (adminRole) {
-      await rbacService.assignRoleToUser(
-        newBusiness.id,
-        userId,
-        adminRole.id,
-        userId,
-      );
+    // result is now { data: AuthResponse, error: null } (or thrown)
+    // result is the 'data' property returned by the hook
+    if (result?.session) {
+      // Email confirmation disabled – user is logged in immediately
+      await refreshProfile();
+      navigate("/dashboard");
+    } else {
+      // Email confirmation required
+      alert("Account created! Please check your inbox and verify your email.");
+      navigate("/login");
     }
-
-    // 4. Set current business in user_settings
-    await authService.switchBusiness(userId, newBusiness.id);
-
-    // 5. Refresh profile to pick up the new business context
-    await refreshProfile();
-
-    alert(
-      "Account created successfully! Please check your inbox and verify your email.",
-    );
-    navigate("/login");
   };
-
-  const errorMessage = signupError || createBusinessError;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 dark:bg-gray-950 font-poppins">
@@ -85,9 +61,9 @@ const SignupPage: React.FC = () => {
           Get started with your Vendora account
         </p>
 
-        {errorMessage && (
+        {signupError && (
           <div className="mb-lg p-sm bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-xl text-sm font-bold text-center border border-red-100 dark:border-red-800">
-            {errorMessage}
+            {signupError}
           </div>
         )}
 
@@ -97,7 +73,7 @@ const SignupPage: React.FC = () => {
             email: "",
             password: "",
             businessName: "",
-            business_category: "Other", // default
+            business_category: "Other",
           }}
           onSubmit={handleSignup}
           className="space-y-md"
@@ -122,27 +98,24 @@ const SignupPage: React.FC = () => {
             placeholder="••••••••"
             required
           />
-
           <TextInput
             name="businessName"
             label="Business Name"
             placeholder="My Awesome Shop"
             required
           />
-
           <SelectInput
             name="business_category"
             label="Business Type"
             options={businessCategoryOptions}
             required
           />
-
           <div className="pt-sm">
             <Button
               inForm={true}
               type="submit"
               className="w-full"
-              loading={createBusinessLoading || signupLoading}
+              loading={signupLoading}
             >
               Sign Up Now
             </Button>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "../../components/Buttons";
-import { AuthRole, Employee } from "../../data/type";
+import { AuthRole, Employee } from "../../data/types";
 import { Form } from "../Form";
 import { SelectInput } from "../Inputs";
 

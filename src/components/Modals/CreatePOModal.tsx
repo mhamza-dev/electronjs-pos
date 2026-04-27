@@ -4,7 +4,7 @@ import { Form } from "../../components/Form";
 import { SelectInput, TextInput } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
 import { catalogService, procurementService } from "../../services";
-import { useAPI } from "../../hooks/useAPI";
+import { useAPI } from "../../hooks/useApi";
 import { Trash2 } from "lucide-react";
 
 interface CreatePOModalProps {

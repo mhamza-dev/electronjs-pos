@@ -5,7 +5,7 @@ import { Button } from "../../components/Buttons";
 import * as yup from "yup";
 import { businessService } from "../../services";
 import { useAuth } from "../../contexts/AuthContext";
-import { useAPI } from "../../hooks/useAPI";
+import { useAPI } from "../../hooks/useApi";
 
 interface CreateBusinessModalProps {
   onClose: () => void;

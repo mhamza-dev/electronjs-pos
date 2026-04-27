@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../../components/Buttons";
 import { rbacService } from "../../services";
-import { useAPI } from "../../hooks/useAPI";
-import { AuthPermission, AuthRole } from "../../data/type";
+import { useAPI } from "../../hooks/useApi";
+import { AuthPermission, AuthRole } from "../../data/types";
 import { Form } from "../Form";
 import { MultiSelectInput } from "../Inputs";
 

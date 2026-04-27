@@ -3,34 +3,50 @@ import { useNavigate, Link } from "react-router-dom";
 import { Form } from "../../components/Form";
 import { TextInput } from "../../components/Inputs";
 import { Button } from "../../components/Buttons";
-import { supabase } from "../../lib/supabase";
+import { signIn } from "../../services/authService"; // named import from authService
 import logo from "../../assets/logo.svg";
 
-interface LoginProps {
+interface LoginFormValues {
   email: string;
   password: string;
 }
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const INITIAL_VALUES: LoginProps = { email: "", password: "" };
+  const INITIAL_VALUES: LoginFormValues = { email: "", password: "" };
 
-  const handleLogin = async (values: LoginProps) => {
+  const handleLogin = async (values: LoginFormValues) => {
+    setError(null);
+    setLoading(true);
     try {
-      setLoading(true);
-      await supabase.auth.signInWithPassword(values);
-      navigate("/dashboard");
-    } catch (error: any) {
-      console.log(error);
-      setError(error.message);
+      const { error: signInError, session } = await signIn({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
+      if (session) {
+        navigate("/dashboard");
+      } else {
+        setError(
+          "Login succeeded but no session was returned. Please try again.",
+        );
+      }
+    } catch (err: any) {
+      // Unexpected error from network or service
+      setError(err?.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-md bg-gray-50 dark:bg-gray-950 font-poppins">
       <div className="w-width-card-lg p-lg bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">

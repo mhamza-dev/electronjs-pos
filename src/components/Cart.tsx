@@ -1,5 +1,5 @@
 import React from "react";
-import { CartItem } from "../data/type";
+import { CartItem } from "../data/types";
 import Checkout from "./Checkout";
 
 interface CartProps {
@@ -19,7 +19,7 @@ const Cart: React.FC<CartProps> = ({
   onCheckout,
 }) => {
   const subtotal = items.reduce(
-    (sum, item) => sum + (item.default_price || 0) * item.quantity,
+    (sum, item) => sum + (item.price || 0) * item.quantity,
     0,
   );
   const tax = subtotal * 0.1;
@@ -85,12 +85,12 @@ const Cart: React.FC<CartProps> = ({
               {item.image_url ? (
                 <img
                   src={item.image_url}
-                  alt={item.product_name}
+                  alt={item.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-lg font-bold text-gray-300 dark:text-gray-500">
-                  {item.product_name.charAt(0)}
+                  {item.name.charAt(0)}
                 </span>
               )}
             </div>
@@ -98,10 +98,10 @@ const Cart: React.FC<CartProps> = ({
             {/* Details */}
             <div className="flex-1 min-w-0">
               <h4 className="font-semibold text-gray-800 dark:text-gray-100 truncate">
-                {item.product_name}
+                {item.name}
               </h4>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                ${(item.default_price || 0).toFixed(2)}
+                ${(item.price || 0).toFixed(2)}
               </p>
 
               {/* Quantity Controls */}
@@ -152,7 +152,7 @@ const Cart: React.FC<CartProps> = ({
             {/* Price & Remove */}
             <div className="flex flex-col items-end">
               <span className="font-bold text-gray-800 dark:text-gray-100">
-                ${((item.default_price || 0) * item.quantity).toFixed(2)}
+                ${((item.price || 0) * item.quantity).toFixed(2)}
               </span>
               <button
                 onClick={() => onRemoveItem(item.id)}
